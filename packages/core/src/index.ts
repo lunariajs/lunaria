@@ -52,16 +52,21 @@ class Lunaria {
 		this.#cwd = cwd;
 	}
 
-	async getFullStatus() {
+	/** Returns an array of the source path of all tracked files. */
+	async getSourcePaths() {
 		const { files } = this.config;
 
-		const status: LunariaStatus = [];
+		const sourcePaths: string[] = [];
 
 		for (const file of files) {
 			const { include, exclude, pattern } = file;
 
 			this.#logger.debug(
-				`Processing files with pattern: ${typeof pattern === 'string' ? pattern : `${pattern.source} (source) - ${pattern.locales} (locales)`}`,
+				`Processing files with pattern: ${
+					typeof pattern === 'string'
+						? pattern
+						: `${pattern.source} (source) - ${pattern.locales} (locales)`
+				}`,
 			);
 
 			// Paths that were filtered out by not matching the source pattern.
@@ -69,10 +74,8 @@ class Lunaria {
 			const filteredOutPaths: string[] = [];
 
 			const { isSourcePath } = this.getPathResolver(pattern);
-			// Lunaria initially globs only the source files, and then proceed to
-			// check the status of each localization file through dynamically
-			// generated paths using `pattern`.
-			const sourceFilePaths = (
+
+			const globbedPaths = (
 				await glob(include, {
 					expandDirectories: false,
 					ignore: exclude,
@@ -88,33 +91,36 @@ class Lunaria {
 
 			if (filteredOutPaths.length > 0) {
 				this.#logger.warn(
-					`The following paths were filtered out by not matching the source pattern: ${filteredOutPaths.map((path) => `\n- ${path}`)}\n\nVerify if your \`files\`'s \`pattern\`, \`include\`, and \`exclude\` are correctly set.`,
+					`The following paths were filtered out by not matching the source pattern: ${filteredOutPaths.map(
+						(path) => `\n- ${path}`,
+					)}\n\nVerify if your \`files\`'s \`pattern\`, \`include\`, and \`exclude\` are correctly set.`,
 				);
 			}
 
-			const entries: LunariaStatus = new Array(sourceFilePaths.length);
-
-			await pAll(
-				sourceFilePaths.map((path) => {
-					return async () => {
-						const entry = await this.getFileStatus(path);
-						if (entry) entries.push(entry);
-					};
-				}),
-				{
-					concurrency: 10,
-				},
-			);
-
-			// We sort the entries by source path to make the resulting status consistent.
-			// That is, entries will be laid out by precedence in the `files` array, and then
-			// sorted internally.
-			const sortedEntries = entries.sort((a, b) => a.source.path.localeCompare(b.source.path));
-
-			for (const entry of sortedEntries) {
-				status.push(entry);
+			const sortedPaths = globbedPaths.sort((a, b) => a.localeCompare(b));
+			for (const entry of sortedPaths) {
+				sourcePaths.push(entry);
 			}
 		}
+
+		return sourcePaths;
+	}
+
+	async getFullStatus() {
+		const sourcePaths = await this.getSourcePaths();
+		const status: LunariaStatus = [];
+
+		await pAll(
+			sourcePaths.map((path) => {
+				return async () => {
+					const entry = await this.getFileStatus(path);
+					if (entry) status.push(entry);
+				};
+			}),
+			{
+				concurrency: 10,
+			},
+		);
 
 		// Save the existing git data into the cache for next builds.
 		if (!this.#force) {
@@ -296,7 +302,9 @@ export async function createLunaria(opts?: LunariaOpts) {
 		const config = await runSetupHook(initialConfig, logger);
 
 		const hash = md5(
-			`ignoredKeywords::${config.tracking.ignoredKeywords.join('|')}:localizableProperty::${config.tracking.localizableProperty}`,
+			`ignoredKeywords::${config.tracking.ignoredKeywords.join(
+				'|',
+			)}:localizableProperty::${config.tracking.localizableProperty}`,
 		);
 
 		const cache = opts?.force
