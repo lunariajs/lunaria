@@ -43,7 +43,6 @@ export type StatusLocalizationEntry<T extends EntryFileType = EntryFileType> =
 	| MissingLocalizationEntry
 	| (T extends 'dictionary' ? DictionaryLocalizationEntry : ExistingLocalizationEntry);
 
-// TODO: Test if the correct properties will be shown per status entry once this is implemented.
 export type StatusEntry<T extends EntryFileType = EntryFileType> = File & {
 	source: {
 		path: string;
