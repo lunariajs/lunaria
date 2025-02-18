@@ -13,12 +13,12 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.3",
     "@changesets/changelog-github": "^0.5.0",
-    "@changesets/cli": "^2.26.2",
+    "@changesets/cli": "^2.27.11",
     "@total-typescript/tsconfig": "^1.0.4",
     "pkg-pr-new": "^0.0.20",
-    "tsx": "^4.17.0",
-    "turbo": "^2.0.14",
-    "typescript": "^5.5.4"
+    "tsx": "^4.19.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.3"
   },
   "packageManager": "pnpm@9.7.1"
 }
