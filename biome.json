@@ -59,6 +59,16 @@
           "lineWidth": 1
         }
       }
+    },
+    {
+      "include": ["*.astro"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedImports": "off"
+          }
+        }
+      }
     }
   ]
 }
