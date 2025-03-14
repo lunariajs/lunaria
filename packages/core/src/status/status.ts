@@ -1,59 +1,27 @@
 import { Traverse } from 'neotraverse/modern';
 import type { OptionalKeys } from '../config/types.js';
 import { InvalidDictionaryStructure, UnsupportedDictionaryFileFormat } from '../errors/errors.js';
-import {
-	frontmatterFileRe,
-	jsonFileRe,
-	loadFrontmatter,
-	loadJSON,
-	loadModule,
-	loadYAML,
-	moduleFileRe,
-	yamlFileRe,
-} from '../files/loaders.js';
 import { DictionarySchema } from './schema.js';
 import type { Dictionary } from './types.js';
+import { createJiti } from 'jiti';
+import yaml from 'js-yaml';
 
-export async function isFileLocalizable(path: string, localizableProperty: string | undefined) {
-	// If no localizableProperty is specified, all files are supposed to be localizable.
-	if (!localizableProperty) return true;
-	// If the file doesn't support frontmatter, it's automatically supposed to be localizable.
-	if (!frontmatterFileRe.test(path)) return true;
-
-	const frontmatter = await loadFrontmatter(path);
-
-	if (frontmatter instanceof Error) return frontmatter;
-
-	const isLocalizable = frontmatter?.[localizableProperty];
-
-	// If the property is not defined in the frontmatter, we assume the file is not localizable.
-	if (typeof isLocalizable === 'undefined') return false;
-
-	// If the type of the property is not a boolean, we assume the file is not localizable.
-	if (typeof isLocalizable !== 'boolean') return false;
-
-	return isLocalizable;
-}
-
-export async function getDictionaryCompletion(
+export async function getMissingDictionaryKeys(
+	sourceDictionary: { fsPath: string; contents: string },
+	localeDictionary: { fsPath: string; contents: string },
 	optionalKeys: OptionalKeys | undefined,
-	sourceDictPath: string,
-	localeDictPath: string,
 ) {
-	const [sourceDict, localeDict] = await loadDictionaries(sourceDictPath, localeDictPath);
-
-	if (sourceDict instanceof Error || localeDict instanceof Error) {
-		throw sourceDict instanceof Error ? sourceDict : localeDict;
-	}
+	const sourceDict = await loadDictionary(sourceDictionary.fsPath, sourceDictionary.contents);
+	const localeDict = await loadDictionary(localeDictionary.fsPath, localeDictionary.contents);
 
 	const parsedSourceDict = DictionarySchema.safeParse(sourceDict);
 	if (parsedSourceDict.error) {
-		throw new Error(InvalidDictionaryStructure.message(sourceDictPath));
+		throw new Error(InvalidDictionaryStructure.message(sourceDictionary.fsPath));
 	}
 
 	const parsedLocaleDict = DictionarySchema.safeParse(localeDict);
 	if (parsedLocaleDict.error) {
-		throw new Error(InvalidDictionaryStructure.message(localeDictPath));
+		throw new Error(InvalidDictionaryStructure.message(localeDictionary.fsPath));
 	}
 
 	return findMissingKeys(optionalKeys, parsedSourceDict.data, parsedLocaleDict.data);
@@ -103,18 +71,23 @@ export function findMissingKeys(
 }
 
 // TODO: Add integration tests for this function
-async function loadDictionaries(sourcePath: string, localePath: string) {
-	if (moduleFileRe.test(sourcePath)) {
-		return [await loadModule(sourcePath), await loadModule(localePath)];
+export async function loadDictionary(path: string, contents: string) {
+	/** Regex to match ESM and CJS JavaScript/TypeScript files. */
+	if (/\.(c|m)?(ts|js)$/.test(path)) {
+		const jiti = createJiti(import.meta.url);
+
+		return await jiti.import(path, { default: true });
 	}
 
-	if (yamlFileRe.test(sourcePath)) {
-		return [await loadYAML(sourcePath), await loadYAML(localePath)];
+	/** Regex to match YAML files. */
+	if (/\.(yml|yaml)$/.test(path)) {
+		return yaml.load(contents);
 	}
 
-	if (jsonFileRe.test(sourcePath)) {
-		return [await loadJSON(sourcePath), await loadJSON(localePath)];
+	/** Regex to match JSON files. */
+	if (/\.json$/.test(path)) {
+		return JSON.parse(contents);
 	}
 
-	throw new Error(UnsupportedDictionaryFileFormat.message(sourcePath));
+	throw new Error(UnsupportedDictionaryFileFormat.message(path));
 }

@@ -1,11 +1,10 @@
 import { createHash } from 'node:crypto';
-import { mkdir, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { join as joinPOSIX } from 'node:path/posix';
 import type { z } from 'zod';
 import type { LunariaConfig } from '../config/types.js';
 import { errorMap } from '../errors/zod-map.js';
-import { loadJSON } from '../files/loaders.js';
 
 export function isRelative(path: string) {
 	return path.startsWith('./') || path.startsWith('../');
@@ -42,14 +41,6 @@ export function parseWithFriendlyErrors<T extends z.Schema>(
 	return parsedConfig.data;
 }
 
-/** Makes a string compatible with `external: true` repositories. This is necessary for reading tracked files within the external path. */
-export function externalSafePath(external: boolean, cwd: string, path: string) {
-	if (external) {
-		return join(cwd, path);
-	}
-	return path;
-}
-
 export async function exists(path: string) {
 	try {
 		await stat(path);
@@ -61,7 +52,7 @@ export async function exists(path: string) {
 
 export async function createCache(dir: string, entry: string, hash: string) {
 	const file = `${entry}.json`;
-	const path = join(resolve(dir, file));
+	const path = resolve(join(dir, file));
 
 	const write = async (contents: Record<string, string>) => {
 		await writeFile(
@@ -73,7 +64,10 @@ export async function createCache(dir: string, entry: string, hash: string) {
 		);
 	};
 
-	const contents = async () => await loadJSON(path);
+	const contents = async () => {
+		const file = await readFile(path, 'utf-8');
+		return JSON.parse(file);
+	};
 
 	const revalidate = async (hash: string) => {
 		if ((await contents())?.__validation !== hash) {

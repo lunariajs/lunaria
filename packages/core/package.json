@@ -23,10 +23,6 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./utils": {
-      "types": "./dist/utils/index.d.ts",
-      "default": "./dist/utils/index.js"
-    },
     "./config": {
       "types": "./dist/config/index.d.ts",
       "default": "./dist/config/index.js"

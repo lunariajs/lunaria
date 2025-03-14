@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { join } from 'node:path';
 import { type ConsolaInstance, createConsola } from 'consola';
 import pAll from 'p-all';
 import picomatch from 'picomatch';
@@ -6,20 +6,16 @@ import { glob } from 'tinyglobby';
 import { loadConfig, validateInitialConfig } from './config/config.js';
 import type { LunariaConfig, Pattern } from './config/types.js';
 import { CONSOLE_LEVELS } from './constants.js';
-import { FilesEntryNotFound, SourceFileNotFound } from './errors/errors.js';
+import { FilesEntryNotFound, FileNotFound } from './errors/errors.js';
 import { createPathResolver } from './files/paths.js';
 import { runSetupHook } from './integrations/integrations.js';
 import { LunariaGitInstance } from './status/git.js';
-import { getDictionaryCompletion, isFileLocalizable } from './status/status.js';
+import { getMissingDictionaryKeys } from './status/status.js';
 import type { LunariaStatus, StatusLocalizationEntry } from './status/types.js';
 import type { LunariaOpts } from './types.js';
-import {
-	createCache,
-	createGitHostingLinks,
-	exists,
-	externalSafePath,
-	md5,
-} from './utils/utils.js';
+import { createCache, createGitHostingLinks, exists, md5 } from './utils/utils.js';
+import { readFile } from 'node:fs/promises';
+import { parse } from 'ultramatter';
 
 export type { LunariaIntegration } from './integrations/types.js';
 export type * from './files/types.js';
@@ -58,8 +54,8 @@ class Lunaria {
 
 		const sourcePaths: string[] = [];
 
-		for (const file of files) {
-			const { include, exclude, pattern } = file;
+		for (const entry of files) {
+			const { include, exclude, pattern } = entry;
 
 			this.#logger.debug(
 				`Processing files with pattern: ${
@@ -98,8 +94,8 @@ class Lunaria {
 			}
 
 			const sortedPaths = globbedPaths.sort((a, b) => a.localeCompare(b));
-			for (const entry of sortedPaths) {
-				sourcePaths.push(entry);
+			for (const path of sortedPaths) {
+				sourcePaths.push(path);
 			}
 		}
 
@@ -113,7 +109,7 @@ class Lunaria {
 		await pAll(
 			sourcePaths.map((path) => {
 				return async () => {
-					const entry = await this.getFileStatus(path);
+					const entry = await this.#getFileStatus(path, false);
 					if (entry) status.push(entry);
 				};
 			}),
@@ -139,124 +135,6 @@ class Lunaria {
 	// caching normally, unless they explicitly want to force a fresh status.
 	async getFileStatus(path: string) {
 		return this.#getFileStatus(path, !this.#force);
-	}
-
-	async #getFileStatus(path: string, cache: boolean) {
-		const { external } = this.config;
-
-		const file = this.findFilesEntry(path);
-
-		if (!file) {
-			this.#logger.error(FilesEntryNotFound.message(path));
-			return undefined;
-		}
-
-		const { isSourcePath, toPath } = this.getPathResolver(file.pattern);
-
-		/** The given path can be of another locale, therefore we always convert it to the source path */
-		const sourcePath = isSourcePath(path) ? path : toPath(path, this.config.sourceLocale.lang);
-
-		if (!(await exists(externalSafePath(external, this.#cwd, sourcePath)))) {
-			this.#logger.error(SourceFileNotFound.message(sourcePath, path));
-			return undefined;
-		}
-
-		const isLocalizable = await isFileLocalizable(
-			externalSafePath(external, this.#cwd, sourcePath),
-			this.config.tracking.localizableProperty,
-		);
-
-		if (isLocalizable instanceof Error) {
-			this.#logger.error(isLocalizable.message);
-			return undefined;
-		}
-
-		// If the file isn't localizable, we don't need to track it.
-		if (!isLocalizable) {
-			this.#logger.debug(
-				`The file \`${path}\` is being tracked but is not localizable. Frontmatter property \`${this.config.tracking.localizableProperty}\` needs to be \`true\` to get a status for this file.`,
-			);
-			return undefined;
-		}
-
-		const latestSourceChanges = await this.#git.getFileLatestChanges(sourcePath);
-
-		// Save the existing git data into the cache for next builds.
-		if (cache) {
-			const cache = await createCache(this.config.cacheDir, 'git', this.#hash);
-			await cache.write(this.#git.cache);
-		}
-
-		const localizations: StatusLocalizationEntry[] = new Array(this.config.locales.length);
-
-		const tasks = this.config.locales.map(({ lang }) => {
-			return async () => {
-				{
-					const localizedPath = toPath(sourcePath, lang);
-
-					if (!(await exists(resolve(externalSafePath(external, this.#cwd, localizedPath))))) {
-						localizations.push({
-							lang: lang,
-							path: localizedPath,
-							status: 'missing',
-						});
-						return;
-					}
-
-					const latestLocaleChanges = await this.#git.getFileLatestChanges(localizedPath);
-
-					/**
-					 * Outdatedness is defined when the latest tracked (that is, considered by Lunaria)
-					 * change in the source file is newer than the latest tracked change in the localized file.
-					 */
-					const isOutdated =
-						new Date(latestSourceChanges.latestTrackedChange.date) >
-						new Date(latestLocaleChanges.latestTrackedChange.date);
-
-					const entryTypeData = async () => {
-						if (file.type === 'dictionary') {
-							try {
-								const missingKeys = await getDictionaryCompletion(
-									file.optionalKeys,
-									externalSafePath(external, this.#cwd, sourcePath),
-									externalSafePath(external, this.#cwd, localizedPath),
-								);
-
-								return {
-									missingKeys,
-								};
-							} catch (e) {
-								if (e instanceof Error) {
-									this.#logger.error(e.message);
-								}
-								process.exit(1);
-							}
-						}
-						return {};
-					};
-
-					localizations.push({
-						lang: lang,
-						path: localizedPath,
-						git: latestLocaleChanges,
-						status: isOutdated ? 'outdated' : 'up-to-date',
-						...(await entryTypeData()),
-					});
-				}
-			};
-		});
-
-		await pAll(tasks, { concurrency: 5 });
-
-		return {
-			...file,
-			source: {
-				lang: this.config.sourceLocale.lang,
-				path: sourcePath,
-				git: latestSourceChanges,
-			},
-			localizations,
-		};
 	}
 
 	/** Returns a path resolver for the specified pattern. */
@@ -289,6 +167,160 @@ class Lunaria {
 
 	gitHostingLinks() {
 		return createGitHostingLinks(this.config.repository);
+	}
+
+	/** Gets a file system path compatible with `external: true` repositories. */
+	#getFsPath(path: string) {
+		if (this.config.external) {
+			return join(this.#cwd, path);
+		}
+		return path;
+	}
+
+	#isFileLocalizable(path: string, contents: string) {
+		// If the file doesn't support frontmatter, it's automatically considered to be localizable.
+		if (!/\.(md|markdown|mdx|mdoc)$/.test(path)) return true;
+
+		const localizableProperty = this.config.tracking.localizableProperty;
+		// If no localizableProperty is specified, all files are supposed to be localizable.
+		if (!localizableProperty) return true;
+
+		const frontmatter = parse(contents).frontmatter;
+		const isLocalizable = frontmatter?.[localizableProperty];
+
+		// If the property is not defined in the frontmatter, we assume the file is not localizable.
+		if (typeof isLocalizable === 'undefined') return false;
+		// If the type of the property is not a boolean, we assume the file is not localizable.
+		if (typeof isLocalizable !== 'boolean') return false;
+
+		return isLocalizable;
+	}
+
+	async #getFileData(path: string, lang: string) {
+		const { sourceLocale } = this.config;
+		const fsPath = this.#getFsPath(path);
+
+		// In case a source path is passed, we error out if the file doesn't exist
+		// since otherwise there's no way any status can be made out of it.
+		if (!(await exists(fsPath))) {
+			if (lang === sourceLocale.lang) this.#logger.error(FileNotFound.message(path));
+			return undefined;
+		}
+
+		const contents = await readFile(fsPath, 'utf-8');
+		// We only check if the source file is localizable, all other locales are automatically considered localizable.
+		const isLocalizable =
+			lang === sourceLocale.lang ? this.#isFileLocalizable(path, contents) : true;
+
+		if (!isLocalizable) {
+			this.#logger.debug(
+				`The file \`${path}\` is being tracked but is not localizable. The frontmatter property \`${this.config.tracking.localizableProperty}\` needs to be \`true\` to get a status for this file.`,
+			);
+			return undefined;
+		}
+
+		return { path, contents, lang };
+	}
+
+	async #getFileStatus(path: string, cache: boolean) {
+		const entry = this.findFilesEntry(path);
+
+		if (!entry) {
+			this.#logger.error(FilesEntryNotFound.message(path));
+			return undefined;
+		}
+
+		// The method accepts a path for either the source or another locale's path,
+		// therefore we have to make sure to convert the `path` to the source locale's `path`.
+		const { isSourcePath, toPath } = this.getPathResolver(entry.pattern);
+		const sourcePath = isSourcePath(path) ? path : toPath(path, this.config.sourceLocale.lang);
+
+		const sourceFileData = await this.#getFileData(path, this.config.sourceLocale.lang);
+		if (!sourceFileData) return undefined;
+
+		const latestSourceChanges = await this.#git.getFileLatestChanges(sourcePath);
+
+		// Save the existing git data into the cache for next builds.
+		if (cache) {
+			const cache = await createCache(this.config.cacheDir, 'git', this.#hash);
+			await cache.write(this.#git.cache);
+		}
+
+		const localizations: StatusLocalizationEntry[] = new Array(this.config.locales.length);
+
+		const tasks = this.config.locales.map(({ lang }) => {
+			return async () => {
+				{
+					const localePath = toPath(path, lang);
+					const localeFileData = await this.#getFileData(localePath, lang);
+
+					if (!localeFileData) {
+						localizations.push({
+							lang: lang,
+							path: localePath,
+							status: 'missing',
+						});
+						return;
+					}
+
+					const latestLocaleChanges = await this.#git.getFileLatestChanges(localePath);
+
+					/**
+					 * Outdatedness is defined when the latest tracked (that is, considered by Lunaria)
+					 * change in the source file is newer than the latest tracked change in the localized file.
+					 */
+					const isOutdated =
+						new Date(latestSourceChanges.latestTrackedChange.date) >
+						new Date(latestLocaleChanges.latestTrackedChange.date);
+
+					const entryTypeData = async () => {
+						if (entry.type === 'dictionary') {
+							try {
+								const missingKeys = await getMissingDictionaryKeys(
+									{
+										fsPath: this.#getFsPath(sourceFileData.path),
+										contents: sourceFileData.contents,
+									},
+									{
+										fsPath: this.#getFsPath(localeFileData.path),
+										contents: localeFileData.contents,
+									},
+									entry.optionalKeys,
+								);
+
+								return {
+									missingKeys,
+								};
+							} catch (e) {
+								if (e instanceof Error) {
+									this.#logger.error(e.message);
+								}
+								process.exit(1);
+							}
+						}
+						return {};
+					};
+
+					localizations.push({
+						...localeFileData,
+						git: latestLocaleChanges,
+						status: isOutdated ? 'outdated' : 'up-to-date',
+						...(await entryTypeData()),
+					});
+				}
+			};
+		});
+
+		await pAll(tasks, { concurrency: 5 });
+
+		return {
+			...entry,
+			source: {
+				...sourceFileData,
+				git: latestSourceChanges,
+			},
+			localizations,
+		};
 	}
 }
 

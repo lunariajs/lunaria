@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { ConfigNotFound, ConfigValidationError } from '../errors/errors.js';
-import { loadModule } from '../files/loaders.js';
+import { createJiti } from 'jiti';
 import { LunariaPreSetupSchema } from '../integrations/schema.js';
 import type { CompleteLunariaUserConfig } from '../integrations/types.js';
 import { exists, parseWithFriendlyErrors } from '../utils/utils.js';
@@ -23,8 +23,9 @@ const configPaths = Object.freeze([
 /** Finds the first `lunaria.config.*` file in the current working directoy and return its path.  */
 async function findConfig() {
 	for (const path of configPaths) {
-		if (await exists(resolve(path))) {
-			return path;
+		const resolvedPath = resolve(path);
+		if (await exists(resolvedPath)) {
+			return resolvedPath;
 		}
 	}
 
@@ -38,7 +39,8 @@ export async function loadConfig() {
 		throw path;
 	}
 
-	const mod = await loadModule(path);
+	const jiti = createJiti(import.meta.url);
+	const mod = await jiti.import(path, { default: true });
 	if (mod instanceof Error) {
 		throw mod;
 	}

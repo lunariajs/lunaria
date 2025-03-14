@@ -18,13 +18,6 @@ export const ConfigValidationError = {
 		`The configuration file does not match the expected schema. Found issues: \n${errors}`,
 } satisfies ErrorContext;
 
-export const FailedToLoadModule = {
-	name: 'FailedToLoadModule',
-	title: 'Failed to load module using jiti.',
-	message: (path: string) =>
-		`Failed to load module at \`${path}\`. This might've been caused by a syntax error in the specified file.`,
-} satisfies ErrorContext;
-
 export const InvalidFilesPattern = {
 	name: 'InvalidFilesPattern',
 	title: 'Invalid `files` pattern was found.',
@@ -32,11 +25,11 @@ export const InvalidFilesPattern = {
 		`The file pattern \`${pattern}\` is missing a valid path parameter. Be sure to add at least one to your pattern string.`,
 } satisfies ErrorContext;
 
-export const SourceFileNotFound = {
-	name: 'SourceFileNotFound',
-	title: 'Source file not found.',
-	message: (sourcePath: string, originPath: string) =>
-		`The source file at \`${sourcePath}\` from requested path \`${originPath}\` does not exist. Verify there are no typos in the path or in the corresponding files' entry configuration.`,
+export const FileNotFound = {
+	name: 'FileNotFound',
+	title: 'File not found.',
+	message: (path: string) =>
+		`The file at \`${path}\` does not exist. Verify there are no typos in the path or in the corresponding files' entry configuration.`,
 } satisfies ErrorContext;
 
 export const FilesEntryNotFound = {

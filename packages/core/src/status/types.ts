@@ -33,6 +33,7 @@ type MissingLocalizationEntry = BaseLocalizationEntry & { status: MissingStatus 
 type ExistingLocalizationEntry = BaseLocalizationEntry & {
 	git: FileGitData;
 	status: OutdatedStatus | UpToDateStatus;
+	contents: string;
 };
 
 type DictionaryLocalizationEntry = ExistingLocalizationEntry & {
@@ -48,6 +49,7 @@ export type StatusEntry<T extends EntryFileType = EntryFileType> = File & {
 		path: string;
 		lang: string;
 		git: FileGitData;
+		contents: string;
 	};
 	localizations: StatusLocalizationEntry<T>[];
 };
