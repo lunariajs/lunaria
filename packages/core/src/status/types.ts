@@ -4,17 +4,21 @@ export type Dictionary = {
 	[k: string]: string | Dictionary;
 };
 
+export type Commit = {
+	author: {
+		name: string;
+		email: string;
+	};
+	message: string;
+	body: string;
+	date: Date;
+	hash: string;
+	refs: string;
+};
+
 export type FileGitData = {
-	latestChange: {
-		message: string;
-		date: string;
-		hash: string;
-	};
-	latestTrackedChange: {
-		message: string;
-		date: string;
-		hash: string;
-	};
+	latestCommit: Commit;
+	latestTrackedCommit: Commit;
 };
 
 type MissingStatus = 'missing';

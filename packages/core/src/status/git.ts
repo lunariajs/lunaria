@@ -1,15 +1,14 @@
 import { cpus } from 'node:os';
-import { join, resolve } from 'node:path';
 import type { ConsolaInstance } from 'consola';
 import picomatch from 'picomatch';
-import { type DefaultLogFields, type ListLogLine, simpleGit } from 'simple-git';
+import { simpleGit } from 'simple-git';
 import type { LunariaConfig } from '../config/types.js';
 import { UncommittedFileFound } from '../errors/errors.js';
 import type { RegExpGroups } from '../utils/types.js';
-import { exists } from '../utils/utils.js';
+import type { Commit } from './types.js';
 
 export class LunariaGitInstance {
-	#git = simpleGit({
+	simpleGit = simpleGit({
 		maxConcurrentProcesses: Math.max(2, Math.min(32, cpus().length)),
 	});
 	#config: LunariaConfig;
@@ -29,74 +28,53 @@ export class LunariaGitInstance {
 		this.#cache = cache;
 	}
 
-	async getFileLatestChanges(path: string) {
-		// The cache will keep the latest tracked change hash, that means it will be able
-		// to completely skip looking into older commits, considerably increasing performance.
-		const log = await this.#git.log({
+	async getFileCommits(path: string, from?: string, to?: string): Promise<Commit[]> {
+		const commits = await this.simpleGit.log({
 			file: path,
 			strictDate: true,
-			from: this.#cache[path] ? `${this.#cache[path]}^` : undefined,
+			from,
+			to,
 		});
 
-		const latestChange = log.latest;
+		return commits.all.map((commit) => ({
+			author: {
+				name: commit.author_name,
+				email: commit.author_email,
+			},
+			message: commit.message,
+			body: commit.body,
+			date: new Date(commit.date),
+			hash: commit.hash,
+			refs: commit.refs,
+		}));
+	}
+
+	async getFileLatestCommits(path: string) {
+		// The cache will keep the latest tracked commit hash, which means it will be able
+		// to completely skip looking into older commits, considerably increasing performance.
+		const fromCommit = this.#cache[path] ? `${this.#cache[path]}^` : undefined;
+		const commits = await this.getFileCommits(path, fromCommit);
+
+		// TODO: Confirm log.all[0] === log.latest.
+		const latestCommit = commits[0];
+
 		// Edge case: sometimes all the changes for a file (or the only one)
 		// have been purposefully ignored in Lunaria, therefore we need to
 		// define the latest change as the latest tracked change.
-		const latestTrackedChange =
-			findLatestTrackedCommit(this.#config.tracking, path, log.all) ?? latestChange;
+		const latestTrackedCommit =
+			findLatestTrackedCommit(this.#config.tracking, path, commits) ?? latestCommit;
 
-		if (!latestChange || !latestTrackedChange) {
+		if (!latestCommit || !latestTrackedCommit) {
 			this.#logger.error(UncommittedFileFound.message(path));
 			process.exit(1);
 		}
+		if (!this.#force) this.#cache[path] = latestTrackedCommit.hash;
 
-		if (!this.#force) this.#cache[path] = latestTrackedChange.hash;
-
-		return {
-			latestChange: {
-				date: latestChange.date,
-				message: latestChange.message,
-				hash: latestChange.hash,
-			},
-			latestTrackedChange: {
-				date: latestTrackedChange.date,
-				message: latestTrackedChange.message,
-				hash: latestTrackedChange.hash,
-			},
-		};
+		return { latestCommit, latestTrackedCommit };
 	}
 
-	// TODO: Using an external repo seems to introduce some sort of performance gains, this should be tested to ensure
-	// its not a bug e.g. not being able to read certain files or the git history not being complete and missing commits
-	// that are necessary for the status to be accurate.
-	async handleExternalRepository() {
-		const { cloneDir, repository } = this.#config;
-		const { name, hosting, rootDir } = repository;
-
-		// The name can contain a slash, which is not allowed in a directory name.
-		const safeName = name.replace('/', '-');
-		const clonePath = resolve(cloneDir, safeName);
-
-		// We need to prepend the root directory so it works in monorepos.
-		// TODO: Test if this causes any issues in non-monorepo contexts.
-		const monorepoSafePath = join(clonePath, rootDir);
-
-		// The external repository has to be a full clone since we need the source contents for features like using `localizableProperty`.
-		if (!(await exists(clonePath))) {
-			// TODO: Implement a way to support private repositories.
-			this.#logger.start("External repository is enabled. Cloning repository's contents...");
-			await this.#git.clone(`https://${hosting}.com/${name}.git`, clonePath);
-			// We need to change the working directory to the cloned repository, so all git commands are executed in the correct context.
-			await this.#git.cwd(monorepoSafePath);
-		} else {
-			await this.#git.cwd(monorepoSafePath);
-			await this.#git.pull();
-		}
-		return monorepoSafePath;
-	}
-
-	get cache() {
-		return this.#cache;
+	async getFileDiff(path: string, from: string, to: string) {
+		return await this.simpleGit.diff([from, to, path]);
 	}
 }
 
@@ -109,7 +87,7 @@ export class LunariaGitInstance {
 export function findLatestTrackedCommit(
 	tracking: LunariaConfig['tracking'],
 	path: string,
-	commits: Readonly<Array<DefaultLogFields & ListLogLine>> | Array<DefaultLogFields & ListLogLine>,
+	commits: Commit[],
 ) {
 	/** Regex that matches a `'@lunaria-track'` or `'@lunaria-ignore'` group
 	 * and a sequence of paths separated by semicolons till a line break.

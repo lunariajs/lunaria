@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { type ConsolaInstance, createConsola } from 'consola';
 import pAll from 'p-all';
 import picomatch from 'picomatch';
@@ -24,11 +24,12 @@ export type * from './config/types.js';
 
 class Lunaria {
 	readonly config: LunariaConfig;
-	#git: LunariaGitInstance;
+	git: LunariaGitInstance;
 	#logger: ConsolaInstance;
 	#force: boolean;
 	#hash: string;
 	#cwd: string;
+	#cache: Record<string, string>;
 
 	constructor(
 		config: LunariaConfig,
@@ -36,16 +37,18 @@ class Lunaria {
 		logger: ConsolaInstance,
 		hash: string,
 		cwd: string,
+		cache: Record<string, string>,
 		force = false,
 	) {
 		this.config = config;
-		this.#git = git;
+		this.git = git;
 		this.#logger = logger;
 		this.#force = force;
 		// Hash used to revalidate the cache -- the tracking properties manipulate how the changes are tracked,
 		// therefore we have to account for them so that the cache is fresh.
 		this.#hash = hash;
 		this.#cwd = cwd;
+		this.#cache = cache;
 	}
 
 	/** Returns an array of the source path of all tracked files. */
@@ -121,7 +124,7 @@ class Lunaria {
 		// Save the existing git data into the cache for next builds.
 		if (!this.#force) {
 			const cache = await createCache(this.config.cacheDir, 'git', this.#hash);
-			await cache.write(this.#git.cache);
+			await cache.write(this.#cache);
 		}
 
 		return status;
@@ -219,7 +222,9 @@ class Lunaria {
 			return undefined;
 		}
 
-		return { path, contents, lang };
+		const git = await this.git.getFileLatestCommits(path);
+
+		return { path, contents, lang, git };
 	}
 
 	async #getFileStatus(path: string, cache: boolean) {
@@ -235,15 +240,13 @@ class Lunaria {
 		const { isSourcePath, toPath } = this.getPathResolver(entry.pattern);
 		const sourcePath = isSourcePath(path) ? path : toPath(path, this.config.sourceLocale.lang);
 
-		const sourceFileData = await this.#getFileData(path, this.config.sourceLocale.lang);
+		const sourceFileData = await this.#getFileData(sourcePath, this.config.sourceLocale.lang);
 		if (!sourceFileData) return undefined;
-
-		const latestSourceChanges = await this.#git.getFileLatestChanges(sourcePath);
 
 		// Save the existing git data into the cache for next builds.
 		if (cache) {
 			const cache = await createCache(this.config.cacheDir, 'git', this.#hash);
-			await cache.write(this.#git.cache);
+			await cache.write(this.#cache);
 		}
 
 		const localizations: StatusLocalizationEntry[] = new Array(this.config.locales.length);
@@ -263,15 +266,11 @@ class Lunaria {
 						return;
 					}
 
-					const latestLocaleChanges = await this.#git.getFileLatestChanges(localePath);
-
-					/**
-					 * Outdatedness is defined when the latest tracked (that is, considered by Lunaria)
-					 * change in the source file is newer than the latest tracked change in the localized file.
-					 */
+					// Outdatedness is defined when the latest tracked (that is, considered by Lunaria)
+					// commit in the source file is newer than the latest tracked commit in the localized file.
 					const isOutdated =
-						new Date(latestSourceChanges.latestTrackedChange.date) >
-						new Date(latestLocaleChanges.latestTrackedChange.date);
+						sourceFileData.git.latestTrackedCommit.date >
+						localeFileData.git.latestTrackedCommit.date;
 
 					const entryTypeData = async () => {
 						if (entry.type === 'dictionary') {
@@ -303,7 +302,6 @@ class Lunaria {
 
 					localizations.push({
 						...localeFileData,
-						git: latestLocaleChanges,
 						status: isOutdated ? 'outdated' : 'up-to-date',
 						...(await entryTypeData()),
 					});
@@ -317,7 +315,6 @@ class Lunaria {
 			...entry,
 			source: {
 				...sourceFileData,
-				git: latestSourceChanges,
 			},
 			localizations,
 		};
@@ -345,15 +342,47 @@ export async function createLunaria(opts?: LunariaOpts) {
 
 		const git = new LunariaGitInstance(config, logger, cache, opts?.force);
 
-		let cwd = process.cwd();
+		const cwd = config.external
+			? await handleExternalRepository(config, logger, git)
+			: process.cwd();
 
-		if (config.external) {
-			cwd = await git.handleExternalRepository();
-		}
-
-		return new Lunaria(config, git, logger, hash, cwd, opts?.force);
+		return new Lunaria(config, git, logger, hash, cwd, cache, opts?.force);
 	} catch (e) {
 		if (e instanceof Error) logger.error(e.message);
 		process.exit(1);
 	}
+}
+
+// TODO: Using an external repo seems to introduce some sort of performance gains, this should be tested to ensure
+// its not a bug e.g. not being able to read certain files or the git history not being complete and missing commits
+// that are necessary for the status to be accurate.
+async function handleExternalRepository(
+	config: LunariaConfig,
+	logger: ConsolaInstance,
+	git: LunariaGitInstance,
+) {
+	const { cloneDir, repository } = config;
+	const { name, hosting, rootDir } = repository;
+
+	// The name can contain a slash, which is not allowed in a directory name.
+	const safeName = name.replace('/', '-');
+	const clonePath = resolve(cloneDir, safeName);
+
+	// We need to prepend the root directory so it works in monorepos.
+	// TODO: Test if this causes any issues in non-monorepo contexts.
+	const monorepoSafePath = join(clonePath, rootDir);
+
+	// The external repository has to be a full clone since we need the source contents for features like using `localizableProperty`.
+	if (!(await exists(clonePath))) {
+		// TODO: Implement a way to support private repositories.
+		logger.start("External repository is enabled. Cloning repository's contents...");
+		await git.simpleGit.clone(`https://${hosting}.com/${name}.git`, clonePath);
+		// We need to change the working directory to the cloned repository, so all git commands are executed in the correct context.
+		await git.simpleGit.cwd(monorepoSafePath);
+	} else {
+		await git.simpleGit.cwd(monorepoSafePath);
+		await git.simpleGit.pull();
+	}
+
+	return monorepoSafePath;
 }
