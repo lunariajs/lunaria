@@ -16,9 +16,8 @@
     "@changesets/cli": "^2.27.11",
     "@total-typescript/tsconfig": "^1.0.4",
     "pkg-pr-new": "^0.0.20",
-    "tsx": "^4.19.2",
     "turbo": "^2.3.3",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.2"
   },
-  "packageManager": "pnpm@9.7.1"
+  "packageManager": "pnpm@10.6.4"
 }

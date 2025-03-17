@@ -3,7 +3,8 @@
   "include": ["src"],
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "erasableSyntaxOnly": true
   },
   "references": [{ "path": "./tsconfig.test.json" }]
 }

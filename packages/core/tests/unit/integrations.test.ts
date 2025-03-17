@@ -1,10 +1,10 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import consola from 'consola';
+import { consola } from 'consola';
 import { runSetupHook } from '../../dist/integrations/integrations.js';
-import { validateFinalConfig } from '../../src/config/config.js';
-import type { CompleteLunariaUserConfig } from '../../src/integrations/types.js';
-import { sampleValidConfig } from '../utils.js';
+import { validateFinalConfig } from '../../dist/config/config.js';
+import type { CompleteLunariaUserConfig } from '../../dist/integrations/types.js';
+import { sampleValidConfig } from '../utils.ts';
 
 describe('Integration setup hook', async () => {
 	it("should throw if it tries to update the config's `integrations` field", async () => {
@@ -20,6 +20,7 @@ describe('Integration setup hook', async () => {
 						...sampleValidConfig,
 						integrations: [sampleIntegration],
 					},
+					// @ts-expect-error: The consola instance has an weird type issue.
 					consola,
 				),
 			{
@@ -63,6 +64,7 @@ describe('Integration setup hook', async () => {
 				},
 				integrations: [sampleIntegration],
 			},
+			// @ts-expect-error: The consola instance has an weird type issue.
 			consola,
 		);
 
@@ -109,6 +111,7 @@ describe('Integration setup hook', async () => {
 				...sampleValidConfig,
 				integrations: [sampleIntegration],
 			},
+			// @ts-expect-error: The consola instance has an weird type issue.
 			consola,
 		);
 

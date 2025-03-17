@@ -37,10 +37,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "node --import tsx --test \"tests/**/*.test.ts\""
+    "test": "node --test \"tests/**/*.test.ts\""
   },
   "dependencies": {
-    "consola": "^3.4.0",
+    "consola": "^3.4.1",
     "jiti": "2.3.3",
     "js-yaml": "^4.1.0",
     "neotraverse": "^0.6.18",
