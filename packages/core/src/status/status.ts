@@ -1,8 +1,8 @@
 import { Traverse } from 'neotraverse/modern';
-import type { OptionalKeys } from '../config/types.js';
-import { InvalidDictionaryStructure, UnsupportedDictionaryFileFormat } from '../errors/errors.js';
-import { DictionarySchema } from './schema.js';
-import type { Dictionary } from './types.js';
+import type { OptionalKeys } from '../config/types.ts';
+import { InvalidDictionaryStructure, UnsupportedDictionaryFileFormat } from '../errors/errors.ts';
+import { DictionarySchema } from './schema.ts';
+import type { Dictionary } from './types.ts';
 import { createJiti } from 'jiti';
 import yaml from 'js-yaml';
 

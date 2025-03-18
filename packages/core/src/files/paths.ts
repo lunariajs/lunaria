@@ -1,8 +1,8 @@
 import { type MatchResult, compile, match } from 'path-to-regexp';
-import type { LunariaConfig, Pattern } from '../config/types.js';
-import { InvalidFilesPattern } from '../errors/errors.js';
-import { stringFromFormat } from '../utils/utils.js';
-import type { PathResolver } from './types.js';
+import type { LunariaConfig, Pattern } from '../config/types.ts';
+import { InvalidFilesPattern } from '../errors/errors.ts';
+import { stringFromFormat } from '../utils/utils.ts';
+import type { PathResolver } from './types.ts';
 
 /** Returns if a pattern has parameters or not */
 function hasParameters(pattern: string, parameters: string[]) {

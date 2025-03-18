@@ -3,8 +3,8 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { join as joinPOSIX } from 'node:path/posix';
 import type { z } from 'zod';
-import type { LunariaConfig } from '../config/types.js';
-import { errorMap } from '../errors/zod-map.js';
+import type { LunariaConfig } from '../config/types.ts';
+import { errorMap } from '../errors/zod-map.ts';
 
 export function isRelative(path: string) {
 	return path.startsWith('./') || path.startsWith('../');

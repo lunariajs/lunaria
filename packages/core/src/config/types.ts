@@ -1,4 +1,4 @@
-import type { LunariaIntegration } from '../integrations/types.js';
+import type { LunariaIntegration } from '../integrations/types.ts';
 
 export type Pattern = string | { source: string; locales: string };
 

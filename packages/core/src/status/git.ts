@@ -2,10 +2,10 @@ import { cpus } from 'node:os';
 import type { ConsolaInstance } from 'consola';
 import picomatch from 'picomatch';
 import { simpleGit } from 'simple-git';
-import type { LunariaConfig } from '../config/types.js';
-import { UncommittedFileFound } from '../errors/errors.js';
-import type { RegExpGroups } from '../utils/types.js';
-import type { Commit } from './types.js';
+import type { LunariaConfig } from '../config/types.ts';
+import { UncommittedFileFound } from '../errors/errors.ts';
+import type { RegExpGroups } from '../utils/types.ts';
+import type { Commit } from './types.ts';
 
 export class LunariaGitInstance {
 	simpleGit = simpleGit({

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Dictionary } from './types.js';
+import type { Dictionary } from './types.ts';
 
 /** An valid dictionary is any recursively nested object with string values. */
 export const DictionarySchema: z.ZodType<Dictionary> = z.lazy(() =>

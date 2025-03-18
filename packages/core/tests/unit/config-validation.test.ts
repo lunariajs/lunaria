@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { validateFinalConfig, validateInitialConfig } from '../../dist/config/config.js';
+import { validateFinalConfig, validateInitialConfig } from '../../src/config/config.ts';
 import { sampleValidConfig } from '../utils.ts';
 
 describe('Configuration validation', () => {

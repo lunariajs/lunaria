@@ -1,4 +1,4 @@
-import type { EntryFileType, File } from '../config/types.js';
+import type { EntryFileType, File } from '../config/types.ts';
 
 export type Dictionary = {
 	[k: string]: string | Dictionary;

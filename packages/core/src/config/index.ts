@@ -1,4 +1,4 @@
-import type { LunariaUserConfig } from './types.js';
+import type { LunariaUserConfig } from './types.ts';
 
 /**
  * Read the full Lunaria configuration reference:

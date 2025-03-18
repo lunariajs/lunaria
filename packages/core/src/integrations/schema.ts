@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BaseLunariaConfigSchema, FileSchema, LocaleSchema } from '../config/schema.js';
+import { BaseLunariaConfigSchema, FileSchema, LocaleSchema } from '../config/schema.ts';
 
 export const LunariaPreSetupSchema = BaseLunariaConfigSchema.extend({
 	sourceLocale: LocaleSchema.optional(),

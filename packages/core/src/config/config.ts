@@ -1,11 +1,11 @@
 import { resolve } from 'node:path';
-import { ConfigNotFound, ConfigValidationError } from '../errors/errors.js';
+import { ConfigNotFound, ConfigValidationError } from '../errors/errors.ts';
 import { createJiti } from 'jiti';
-import { LunariaPreSetupSchema } from '../integrations/schema.js';
-import type { CompleteLunariaUserConfig } from '../integrations/types.js';
-import { exists, parseWithFriendlyErrors } from '../utils/utils.js';
-import { LunariaConfigSchema } from './schema.js';
-import type { LunariaUserConfig } from './types.js';
+import { LunariaPreSetupSchema } from '../integrations/schema.ts';
+import type { CompleteLunariaUserConfig } from '../integrations/types.ts';
+import { exists, parseWithFriendlyErrors } from '../utils/utils.ts';
+import { LunariaConfigSchema } from './schema.ts';
+import type { LunariaUserConfig } from './types.ts';
 
 /**
  * Paths to search for the Lunaria config file,

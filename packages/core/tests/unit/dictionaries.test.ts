@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { findMissingKeys } from '../../dist/status/status.js';
+import { findMissingKeys } from '../../src/status/status.ts';
 
 describe('Dictionaries', () => {
 	it('should return all missing keys when no optional keys are set', () => {

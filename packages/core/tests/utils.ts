@@ -1,4 +1,4 @@
-import type { CompleteLunariaUserConfig } from '../dist/integrations/types.js';
+import type { CompleteLunariaUserConfig } from '../src/integrations/types.ts';
 
 export const sampleValidConfig: CompleteLunariaUserConfig = {
 	repository: {

@@ -1,8 +1,8 @@
 import type { ConsolaInstance } from 'consola';
-import { validateFinalConfig, validateInitialConfig } from '../config/config.js';
-import type { LunariaUserConfig } from '../config/types.js';
-import { UnsupportedIntegrationSelfUpdate } from '../errors/errors.js';
-import type { CompleteLunariaUserConfig } from './types.js';
+import { validateFinalConfig, validateInitialConfig } from '../config/config.ts';
+import type { LunariaUserConfig } from '../config/types.ts';
+import { UnsupportedIntegrationSelfUpdate } from '../errors/errors.ts';
+import type { CompleteLunariaUserConfig } from './types.ts';
 
 export async function runSetupHook(config: LunariaUserConfig, logger: ConsolaInstance) {
 	// If no integrations are present, we can just return the parsed config.

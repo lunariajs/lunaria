@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { createPathResolver } from '../../dist/files/paths.js';
+import { createPathResolver } from '../../src/files/paths.ts';
 
 describe('Path resolver', () => {
 	it("should convert pattern from Lunaria's format into path-to-regexp's format", () => {

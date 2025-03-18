@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import { consola } from 'consola';
-import { runSetupHook } from '../../dist/integrations/integrations.js';
-import { validateFinalConfig } from '../../dist/config/config.js';
-import type { CompleteLunariaUserConfig } from '../../dist/integrations/types.js';
+import { runSetupHook } from '../../src/integrations/integrations.ts';
+import { validateFinalConfig } from '../../src/config/config.ts';
+import type { CompleteLunariaUserConfig } from '../../src/integrations/types.ts';
 import { sampleValidConfig } from '../utils.ts';
 
 describe('Integration setup hook', async () => {

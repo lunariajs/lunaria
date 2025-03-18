@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { createGitHostingLinks } from '../../dist/utils/utils.js';
+import { createGitHostingLinks } from '../../src/utils/utils.ts';
 
 describe('Git hosting links', () => {
 	it('should correctly create paths for GitHub', () => {
