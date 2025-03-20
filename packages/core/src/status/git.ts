@@ -72,10 +72,6 @@ export class LunariaGitInstance {
 
 		return { latestCommit, latestTrackedCommit };
 	}
-
-	async getFileDiff(path: string, from: string, to: string) {
-		return await this.simpleGit.diff([from, to, path]);
-	}
 }
 
 /**
