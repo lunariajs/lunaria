@@ -254,7 +254,7 @@ class Lunaria {
 		const tasks = this.config.locales.map(({ lang }) => {
 			return async () => {
 				{
-					const localePath = toPath(path, lang);
+					const localePath = toPath(sourcePath, lang);
 					const localeFileData = await this.#getFileData(localePath, lang);
 
 					if (!localeFileData) {
