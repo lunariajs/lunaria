@@ -61,10 +61,9 @@ class Lunaria {
 			const { include, exclude, pattern } = entry;
 
 			this.#logger.debug(
-				`Processing files with pattern: ${
-					typeof pattern === 'string'
-						? pattern
-						: `${pattern.source} (source) - ${pattern.locales} (locales)`
+				`Processing files with pattern: ${typeof pattern === 'string'
+					? pattern
+					: `${pattern.source} (source) - ${pattern.locales} (locales)`
 				}`,
 			);
 
@@ -341,6 +340,12 @@ export async function createLunaria(opts?: LunariaOpts) {
 			: await (await createCache(config.cacheDir, 'git', hash)).contents();
 
 		const git = new LunariaGitInstance(config, logger, cache, opts?.force);
+
+		// Netlify does a blobless clone, meaning we have to fetch the blobs to ensure it can access all files.
+		if (process.env.NETLIFY) {
+			logger.info("Netlify deployment detected. Missing blobs will be fetched.");
+			await git.simpleGit.fetch(["--refetch", "--no-filter"]);
+		}
 
 		const cwd = config.external
 			? await handleExternalRepository(config, logger, git)
