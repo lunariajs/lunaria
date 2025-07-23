@@ -5,6 +5,7 @@ import { DictionarySchema } from './schema.ts';
 import type { Dictionary } from './types.ts';
 import { createJiti } from 'jiti';
 import yaml from 'js-yaml';
+import { resolve } from 'node:path';
 
 export async function getMissingDictionaryKeys(
 	sourceDictionary: { fsPath: string; contents: string },
@@ -74,9 +75,10 @@ export function findMissingKeys(
 export async function loadDictionary(path: string, contents: string) {
 	/** Regex to match ESM and CJS JavaScript/TypeScript files. */
 	if (/\.(c|m)?(ts|js)$/.test(path)) {
+		const resolvedPath = resolve(path);
 		const jiti = createJiti(import.meta.url);
 
-		return await jiti.import(path, { default: true });
+		return await jiti.import(resolvedPath, { default: true });
 	}
 
 	/** Regex to match YAML files. */
