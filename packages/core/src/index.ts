@@ -248,7 +248,7 @@ class Lunaria {
 			await cache.write(this.#cache);
 		}
 
-		const localizations: StatusLocalizationEntry[] = new Array(this.config.locales.length);
+		const localizations: StatusLocalizationEntry[] = [];
 
 		const tasks = this.config.locales.map(({ lang }) => {
 			return async () => {
