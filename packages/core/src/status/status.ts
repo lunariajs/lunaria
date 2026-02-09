@@ -1,11 +1,11 @@
+import { resolve } from 'node:path';
+import { createJiti } from 'jiti';
+import yaml from 'js-yaml';
 import { Traverse } from 'neotraverse/modern';
 import type { OptionalKeys } from '../config/types.ts';
 import { InvalidDictionaryStructure, UnsupportedDictionaryFileFormat } from '../errors/errors.ts';
 import { DictionarySchema } from './schema.ts';
 import type { Dictionary } from './types.ts';
-import { createJiti } from 'jiti';
-import yaml from 'js-yaml';
-import { resolve } from 'node:path';
 
 export async function getMissingDictionaryKeys(
 	sourceDictionary: { fsPath: string; contents: string },

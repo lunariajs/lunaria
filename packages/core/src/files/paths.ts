@@ -1,4 +1,4 @@
-import { type MatchResult, compile, match } from 'path-to-regexp';
+import { compile, type MatchResult, match } from 'path-to-regexp';
 import type { LunariaConfig, Pattern } from '../config/types.ts';
 import { InvalidFilesPattern } from '../errors/errors.ts';
 import { stringFromFormat } from '../utils/utils.ts';

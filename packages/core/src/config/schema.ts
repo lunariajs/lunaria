@@ -108,7 +108,7 @@ export const LunariaConfigSchema = BaseLunariaConfigSchema.superRefine((config, 
 		locales.add(locale);
 	}
 
-	let params: Array<string> | undefined = undefined;
+	let params: Array<string> | undefined;
 	for (const { parameters, lang } of [config.sourceLocale, ...config.locales]) {
 		// Since the sourceLocale is evaluated first in the array, we can use it
 		// to ensure whe are properly checking no locales has the `parameters` field.

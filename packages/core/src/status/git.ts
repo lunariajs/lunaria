@@ -118,6 +118,7 @@ export function findLatestTrackedCommit(
 				// We trim here since there might be added extra spaces by accident.
 				if (directive === '@lunaria-track') return picomatch.isMatch(path, pathOrGlob.trim());
 				if (directive === '@lunaria-ignore') return picomatch.isMatch(path, pathOrGlob.trim());
+				return false;
 			});
 
 		// If we find the path and it's a `track` directive, we consider the commit as the latest tracked.

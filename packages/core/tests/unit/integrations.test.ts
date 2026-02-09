@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import { consola } from 'consola';
-import { runSetupHook } from '../../src/integrations/integrations.ts';
 import { validateFinalConfig } from '../../src/config/config.ts';
+import { runSetupHook } from '../../src/integrations/integrations.ts';
 import type { CompleteLunariaUserConfig } from '../../src/integrations/types.ts';
 import { sampleValidConfig } from '../utils.ts';
 

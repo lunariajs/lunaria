@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
-import { ConfigNotFound, ConfigValidationError } from '../errors/errors.ts';
 import { createJiti } from 'jiti';
+import { ConfigNotFound, ConfigValidationError } from '../errors/errors.ts';
 import { LunariaPreSetupSchema } from '../integrations/schema.ts';
 import type { CompleteLunariaUserConfig } from '../integrations/types.ts';
 import { exists, parseWithFriendlyErrors } from '../utils/utils.ts';
