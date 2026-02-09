@@ -1,8 +1,6 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.3/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
+  "$schema": "https://biomejs.dev/schemas/2.3.14/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "formatter": {
     "indentStyle": "tab",
     "indentWidth": 2,
@@ -53,7 +51,7 @@
   },
   "overrides": [
     {
-      "include": ["package.json"],
+      "includes": ["**/package.json"],
       "json": {
         "formatter": {
           "lineWidth": 1
@@ -61,7 +59,7 @@
       }
     },
     {
-      "include": ["*.astro"],
+      "includes": ["**/*.astro"],
       "linter": {
         "rules": {
           "correctness": {
