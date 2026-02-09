@@ -61,9 +61,10 @@ class Lunaria {
 			const { include, exclude, pattern } = entry;
 
 			this.#logger.debug(
-				`Processing files with pattern: ${typeof pattern === 'string'
-					? pattern
-					: `${pattern.source} (source) - ${pattern.locales} (locales)`
+				`Processing files with pattern: ${
+					typeof pattern === 'string'
+						? pattern
+						: `${pattern.source} (source) - ${pattern.locales} (locales)`
 				}`,
 			);
 
@@ -339,19 +340,25 @@ export async function createLunaria(opts?: LunariaOpts) {
 			? {}
 			: await (await createCache(config.cacheDir, 'git', hash)).contents();
 
-		const git = new LunariaGitInstance(config, logger, cache, opts?.force);
+		const lunariaGit = new LunariaGitInstance(config, logger, cache, opts?.force);
 
+		// TODO: Refactor this so its easier to add new platforms later.
 		// Netlify does a blobless clone, meaning we have to fetch the blobs to ensure it can access all files.
 		if (process.env.NETLIFY) {
-			logger.info("Netlify deployment detected. Missing blobs will be fetched.");
-			await git.simpleGit.fetch(["--refetch", "--no-filter"]);
+			logger.info('Netlify deployment detected. Missing blobs will be fetched.');
+			await lunariaGit.simpleGit.fetch(['--refetch', '--no-filter']);
+		}
+
+		if (process.env.VERCEL) {
+			logger.info('Vercel deployment detected. Missing blobs will be fetched.');
+			await lunariaGit.simpleGit.fetch(['--refetch', '--no-filter']);
 		}
 
 		const cwd = config.external
 			? await handleExternalRepository(config, logger, git)
 			: process.cwd();
 
-		return new Lunaria(config, git, logger, hash, cwd, cache, opts?.force);
+		return new Lunaria(config, lunariaGit, logger, hash, cwd, cache, opts?.force);
 	} catch (e) {
 		if (e instanceof Error) logger.error(e.message);
 		process.exit(1);
