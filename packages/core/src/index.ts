@@ -355,7 +355,7 @@ export async function createLunaria(opts?: LunariaOpts) {
 		}
 
 		const cwd = config.external
-			? await handleExternalRepository(config, logger, git)
+			? await handleExternalRepository(config, logger, lunariaGit)
 			: process.cwd();
 
 		return new Lunaria(config, lunariaGit, logger, hash, cwd, cache, opts?.force);
