@@ -25,11 +25,18 @@ export default defineConfig({
 			head: [
 				{
 					tag: 'meta',
-					attrs: { property: 'og:image', content: site + 'og.jpg?v=1' },
+					attrs: { property: 'og:image', content: `${site}og.jpg?v=1` },
 				},
 				{
 					tag: 'meta',
-					attrs: { property: 'twitter:image', content: site + 'og.jpg?v=1' },
+					attrs: { property: 'twitter:image', content: `${site}og.jpg?v=1` },
+				},
+				{
+					tag: 'script',
+					attrs: {
+						defer: true,
+						src: 'https://assets.onedollarstats.com/stonks.js',
+					},
 				},
 			],
 			sidebar: [
