@@ -78,7 +78,7 @@
     "get-port": "^7.0.0",
     "jiti": "^1.21.0",
     "micromatch": "^4.0.5",
-    "path-to-regexp": "^6.2.1",
+    "path-to-regexp": "^8.2.0",
     "picocolors": "^1.0.0",
     "simple-git": "^3.20.0",
     "ultramatter": "^0.0.4",
