@@ -38,6 +38,9 @@ importers:
       astro:
         specifier: ^5.17.3
         version: 5.17.3(@netlify/blobs@10.7.0)(@types/node@25.3.0)(jiti@2.6.1)(rollup@4.57.1)(terser@5.33.0)(tsx@4.19.2)(typescript@5.9.3)(yaml@2.8.2)
+      sharp:
+        specifier: ^0.34.5
+        version: 0.34.5
       starlight-blog:
         specifier: ^0.25.2
         version: 0.25.2(@astrojs/starlight@0.37.6(astro@5.17.3(@netlify/blobs@10.7.0)(@types/node@25.3.0)(jiti@2.6.1)(rollup@4.57.1)(terser@5.33.0)(tsx@4.19.2)(typescript@5.9.3)(yaml@2.8.2)))(astro@5.17.3(@netlify/blobs@10.7.0)(@types/node@25.3.0)(jiti@2.6.1)(rollup@4.57.1)(terser@5.33.0)(tsx@4.19.2)(typescript@5.9.3)(yaml@2.8.2))
@@ -6733,8 +6736,7 @@ snapshots:
   '@fastify/busboy@3.2.0':
     optional: true
 
-  '@img/colour@1.0.0':
-    optional: true
+  '@img/colour@1.0.0': {}
 
   '@img/sharp-darwin-arm64@0.33.4':
     optionalDependencies:
@@ -8436,8 +8438,7 @@ snapshots:
 
   detect-libc@2.0.3: {}
 
-  detect-libc@2.1.2:
-    optional: true
+  detect-libc@2.1.2: {}
 
   detect-package-manager@3.0.2:
     dependencies:
@@ -10283,7 +10284,7 @@ snapshots:
 
   node-abi@3.47.0:
     dependencies:
-      semver: 7.6.3
+      semver: 7.7.4
 
   node-addon-api@6.1.0: {}
 
@@ -11168,7 +11169,6 @@ snapshots:
       '@img/sharp-win32-arm64': 0.34.5
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:
@@ -11581,7 +11581,7 @@ snapshots:
 
   typescript-auto-import-cache@0.3.3:
     dependencies:
-      semver: 7.6.3
+      semver: 7.7.4
 
   typescript@5.5.4: {}
 
@@ -11848,7 +11848,7 @@ snapshots:
   volar-service-typescript@0.0.61(@volar/language-service@2.4.5):
     dependencies:
       path-browserify: 1.0.1
-      semver: 7.6.3
+      semver: 7.7.4
       typescript-auto-import-cache: 0.3.3
       vscode-languageserver-textdocument: 1.0.12
       vscode-nls: 5.2.0
