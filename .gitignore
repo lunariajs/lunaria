@@ -26,3 +26,5 @@ pnpm-debug.log*
 
 # vitest
 __coverage__/
+# Local Netlify folder
+.netlify
