@@ -31,6 +31,13 @@ export default defineConfig({
 					tag: 'meta',
 					attrs: { property: 'twitter:image', content: `${site}og.jpg?v=1` },
 				},
+				{
+					tag: 'script',
+					attrs: {
+						defer: true,
+						src: 'https://assets.onedollarstats.com/stonks.js',
+					},
+				},
 			],
 			sidebar: [
 				{
