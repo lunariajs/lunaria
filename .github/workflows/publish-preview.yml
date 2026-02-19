@@ -19,18 +19,18 @@ jobs:
           ref: ${{ github.head_ref }}
 
       - name: Setup PNPM
-        uses: pnpm/action-setup@v2
-  
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
       - name: Install Dependencies
         run: pnpm i
-  
+
       - name: Build Packages
         run: pnpm run build:core
 
-      - run: pnpx pkg-pr-new publish --compact './packages/core'
+      - run: pnpm dlx pkg-pr-new publish --compact --packageManager=pnpm './packages/core'
