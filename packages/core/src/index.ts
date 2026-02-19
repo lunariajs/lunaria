@@ -275,6 +275,25 @@ class Lunaria {
 					const entryTypeData = async () => {
 						if (entry.type === 'dictionary') {
 							try {
+								// Resolve base locale dictionaries needed for merging, if set.
+								const baseLangs = entry.merge?.[lang];
+								const baseDictionaries = baseLangs
+									? await Promise.all(
+											baseLangs.map(async (baseLang) => {
+												const basePath = toPath(sourcePath, baseLang);
+												const baseFsPath = this.#getFsPath(basePath);
+
+												if (!(await exists(baseFsPath))) {
+													this.#logger.error(FileNotFound.message(basePath));
+													process.exit(1);
+												}
+
+												const baseContents = await readFile(baseFsPath, 'utf-8');
+												return { fsPath: baseFsPath, contents: baseContents };
+											}),
+										)
+									: undefined;
+
 								const missingKeys = await getMissingDictionaryKeys(
 									{
 										fsPath: this.#getFsPath(sourceFileData.path),
@@ -284,6 +303,7 @@ class Lunaria {
 										fsPath: this.#getFsPath(localeFileData.path),
 										contents: localeFileData.contents,
 									},
+									baseDictionaries,
 									entry.optionalKeys,
 								);
 

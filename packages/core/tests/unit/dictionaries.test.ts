@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { findMissingKeys } from '../../src/status/status.ts';
+import { findMissingKeys, mergeBaseDictionaries } from '../../src/status/status.ts';
 
-describe('Dictionaries', () => {
+describe('findMissingKeys', () => {
 	it('should return all missing keys when no optional keys are set', () => {
 		const missingKeys = findMissingKeys(
 			undefined,
@@ -70,5 +70,90 @@ describe('Dictionaries', () => {
 		);
 
 		assert.deepEqual(missingKeys, [['key3'], ['key4', 'key5']]);
+	});
+});
+
+describe('mergeBaseDictionaries', () => {
+	it('should return locale dict unchanged when no bases are given', () => {
+		const locale = { key1: 'value1', key2: 'value2' };
+		const result = mergeBaseDictionaries(locale, []);
+		assert.deepEqual(result, locale);
+	});
+
+	it('should fill in top-level keys absent from the locale with base keys', () => {
+		const locale = { key1: 'locale1' };
+		const base = { key1: 'base1', key2: 'base2', key3: 'base3' };
+		const result = mergeBaseDictionaries(locale, [base]);
+		assert.deepEqual(result, { key1: 'locale1', key2: 'base2', key3: 'base3' });
+	});
+
+	it('should never overwrite keys already present in the locale', () => {
+		const locale = { key1: 'locale1', key2: 'locale2' };
+		const base = { key1: 'base1', key2: 'base2', key3: 'base3' };
+		const result = mergeBaseDictionaries(locale, [base]);
+		assert.equal(result.key1, 'locale1');
+		assert.equal(result.key2, 'locale2');
+		assert.equal(result.key3, 'base3');
+	});
+
+	it('should deep-merge nested objects, preserving locale keys at every level', () => {
+		const locale = { ns: { key1: 'locale1' } };
+		const base = { ns: { key1: 'base1', key2: 'base2' }, top: 'baseTop' };
+		const result = mergeBaseDictionaries(locale, [base]);
+		assert.deepEqual(result, {
+			ns: { key1: 'locale1', key2: 'base2' },
+			top: 'baseTop',
+		});
+	});
+
+	it('should apply multiple bases left-to-right, earlier bases taking precedence over later ones', () => {
+		const locale = { key1: 'locale1' };
+		const base1 = { key2: 'base1-key2', key3: 'base1-key3' };
+		const base2 = { key2: 'base2-key2', key4: 'base2-key4' };
+		const result = mergeBaseDictionaries(locale, [base1, base2]);
+		// key2 comes from base1 (first base wins over second base)
+		// key4 comes from base2 (only present in base2)
+		assert.deepEqual(result, {
+			key1: 'locale1',
+			key2: 'base1-key2',
+			key3: 'base1-key3',
+			key4: 'base2-key4',
+		});
+	});
+
+	it('should not report keys covered by a base as missing', () => {
+		const source = { key1: 'src1', key2: 'src2', key3: 'src3' };
+		const locale = { key1: 'locale1' };
+		const base = { key2: 'base2' };
+
+		// Without merge: key2 and key3 are missing.
+		assert.deepEqual(findMissingKeys(undefined, source, locale), [['key2'], ['key3']]);
+
+		// With merge: key2 is covered by the base, only key3 is still missing.
+		const effective = mergeBaseDictionaries(locale, [base]);
+		assert.deepEqual(findMissingKeys(undefined, source, effective), [['key3']]);
+	});
+
+	it('should handle deeply nested keys covered by a base', () => {
+		const source = { ns: { a: 'srcA', b: 'srcB' } };
+		const locale = { ns: { a: 'localeA' } };
+		const base = { ns: { b: 'baseB' } };
+
+		// Without merge: ns.b is missing.
+		assert.deepEqual(findMissingKeys(undefined, source, locale), [['ns', 'b']]);
+
+		// With merge: ns.b is covered by base, nothing missing.
+		const effective = mergeBaseDictionaries(locale, [base]);
+		assert.deepEqual(findMissingKeys(undefined, source, effective), []);
+	});
+
+	it('should chain: each successive base only fills what prior bases and locale did not cover', () => {
+		const source = { a: 'srcA', b: 'srcB', c: 'srcC', d: 'srcD' };
+		const locale = { a: 'localeA' };
+		const base1 = { b: 'base1B' }; // covers b
+		const base2 = { c: 'base2C' }; // covers c; d still missing
+
+		const effective = mergeBaseDictionaries(locale, [base1, base2]);
+		assert.deepEqual(findMissingKeys(undefined, source, effective), [['d']]);
 	});
 });

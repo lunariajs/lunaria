@@ -38,6 +38,7 @@ export const FileSchema = z.discriminatedUnion('type', [
 	BaseFileSchema.extend({ type: z.literal('universal') }),
 	BaseFileSchema.extend({
 		type: z.literal('dictionary'),
+		merge: z.record(z.string(), z.array(z.string()).nonempty()).optional(),
 		optionalKeys: OptionalKeysSchema.optional(),
 	}),
 ]);
@@ -126,7 +127,7 @@ export const LunariaConfigSchema = BaseLunariaConfigSchema.superRefine((config, 
 		if (params && !parameters) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				message: `All locales must have the same \`parameters\` keys. Locale ${lang} does not have \`parameters\`.`,
+				message: `All locales must have the same \`parameters\` keys. Locale ${lang} does not have \`parameters\``,
 			});
 		}
 	}
@@ -136,5 +137,32 @@ export const LunariaConfigSchema = BaseLunariaConfigSchema.superRefine((config, 
 			code: z.ZodIssueCode.custom,
 			message: '`cacheDir` and `cloneDir` should not be in the same directory',
 		});
+	}
+
+	for (const file of config.files) {
+		if (file.type !== 'dictionary' || !file.merge) continue;
+
+		for (const [targetLang, baseLangs] of Object.entries(file.merge)) {
+			if (!locales.has(targetLang)) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: `\`merge\` key \`"${targetLang}"\` is not a configured locale lang`,
+				});
+			}
+			for (const baseLang of baseLangs) {
+				if (!locales.has(baseLang)) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: `\`merge\` base lang \`"${baseLang}"\` for target \`"${targetLang}"\` is not a configured locale lang`,
+					});
+				}
+				if (baseLang === targetLang) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: `\`merge\` base lang \`"${baseLang}"\` cannot be the same as its target lang`,
+					});
+				}
+			}
+		}
 	}
 });

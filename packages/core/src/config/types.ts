@@ -12,11 +12,16 @@ export type UniversalFileEntry = 'universal';
 export type DictionaryFileEntry = 'dictionary';
 export type EntryFileType = UniversalFileEntry | DictionaryFileEntry;
 
+export type Merge = Record<string, [string, ...string[]]>;
 export type OptionalKeys = { [k: string]: boolean | OptionalKeys };
 
 export type File =
 	| (BaseFile & { type: UniversalFileEntry })
-	| (BaseFile & { type: DictionaryFileEntry; optionalKeys?: OptionalKeys });
+	| (BaseFile & {
+			type: DictionaryFileEntry;
+			merge?: Merge;
+			optionalKeys?: OptionalKeys;
+	  });
 
 type GitHostingOptions = 'github' | 'gitlab';
 

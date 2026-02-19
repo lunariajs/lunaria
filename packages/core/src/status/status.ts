@@ -10,7 +10,8 @@ import type { Dictionary } from './types.ts';
 export async function getMissingDictionaryKeys(
 	sourceDictionary: { fsPath: string; contents: string },
 	localeDictionary: { fsPath: string; contents: string },
-	optionalKeys: OptionalKeys | undefined,
+	baseDictionaries?: { fsPath: string; contents: string }[],
+	optionalKeys?: OptionalKeys,
 ) {
 	const sourceDict = await loadDictionary(sourceDictionary.fsPath, sourceDictionary.contents);
 	const localeDict = await loadDictionary(localeDictionary.fsPath, localeDictionary.contents);
@@ -25,7 +26,72 @@ export async function getMissingDictionaryKeys(
 		throw new Error(InvalidDictionaryStructure.message(localeDictionary.fsPath));
 	}
 
-	return findMissingKeys(optionalKeys, parsedSourceDict.data, parsedLocaleDict.data);
+	const effectiveLocaleDict =
+		baseDictionaries && baseDictionaries.length > 0
+			? mergeBaseDictionaries(
+					parsedLocaleDict.data,
+					await Promise.all(
+						baseDictionaries.map(async (base) => {
+							const baseDict = await loadDictionary(base.fsPath, base.contents);
+							const parsedBaseDict = DictionarySchema.safeParse(baseDict);
+
+							if (parsedBaseDict.error) {
+								throw new Error(InvalidDictionaryStructure.message(base.fsPath));
+							}
+
+							return parsedBaseDict.data;
+						}),
+					),
+				)
+			: parsedLocaleDict.data;
+
+	return findMissingKeys(optionalKeys, parsedSourceDict.data, effectiveLocaleDict);
+}
+
+/**
+ * Builds an effective locale dictionary by merging base dictionaries into the locale dictionary.
+ * The locale's own keys always take precedence; base dictionaries (in order) fill in the rest.
+ * Each base dictionary fills gaps not covered by the locale or by earlier base dictionaries.
+ *
+ * Used to implement the `merge` field on dictionary file entries, where keys present in a base
+ * locale's `lang` count as covered for the target locale. A key is only considered missing if it
+ * is absent from the target locale **and** from every base locale in the list.
+ *
+ * @example
+ * // Keys present in `es` are treated as already covered for `es-419`:
+ * merge: { 'es-419': ['es'] }
+ */
+export function mergeBaseDictionaries(localeDict: Dictionary, baseDicts: Dictionary[]): Dictionary {
+	return baseDicts.reduce<Dictionary>((acc, base) => deepMergeUnder(acc, base), { ...localeDict });
+}
+
+/**
+ * Deep-merges `base` into `target`, adding only keys absent from `target`.
+ * Keys already present in `target` (at any depth) are never overwritten.
+ */
+function deepMergeUnder(target: Dictionary, base: Dictionary): Dictionary {
+	const result: Dictionary = { ...target };
+
+	for (const key of Object.keys(base)) {
+		const baseVal = base[key];
+		const targetVal = target[key];
+
+		if (!(key in target) && baseVal !== undefined) {
+			// Key entirely absent from target — take from base.
+			result[key] = baseVal;
+		} else if (
+			typeof targetVal === 'object' &&
+			targetVal !== null &&
+			typeof baseVal === 'object' &&
+			baseVal !== null
+		) {
+			// Both are nested dicts — recurse.
+			result[key] = deepMergeUnder(targetVal, baseVal);
+		}
+		// Otherwise target already has a string value — leave it.
+	}
+
+	return result;
 }
 
 export function findMissingKeys(

@@ -110,4 +110,72 @@ describe('Configuration validation', () => {
 			}),
 		);
 	});
+
+	it('should throw when a merge target lang is not a configured locale', () => {
+		assert.throws(() =>
+			validateFinalConfig({
+				...sampleValidConfig,
+				files: [
+					{
+						include: ['src/content/**/*.mdx'],
+						pattern: 'src/content/@lang/@path',
+						type: 'dictionary',
+						merge: { fr: ['es'] },
+					},
+				],
+			}),
+		);
+	});
+
+	it('should throw when a merge base lang is not a configured locale', () => {
+		assert.throws(() =>
+			validateFinalConfig({
+				...sampleValidConfig,
+				files: [
+					{
+						include: ['src/content/**/*.mdx'],
+						pattern: 'src/content/@lang/@path',
+						type: 'dictionary',
+						merge: { es: ['fr'] },
+					},
+				],
+			}),
+		);
+	});
+
+	it('should throw when a merge base lang equals its target lang', () => {
+		assert.throws(() =>
+			validateFinalConfig({
+				...sampleValidConfig,
+				files: [
+					{
+						include: ['src/content/**/*.mdx'],
+						pattern: 'src/content/@lang/@path',
+						type: 'dictionary',
+						merge: { es: ['es'] },
+					},
+				],
+			}),
+		);
+	});
+
+	it('should accept valid merge lang identifiers', () => {
+		assert.doesNotThrow(() =>
+			validateFinalConfig({
+				...sampleValidConfig,
+				locales: [
+					{ label: 'Spanish', lang: 'es' },
+					{ label: 'Latin Spanish', lang: 'es-LAT' },
+				],
+				files: [
+					{
+						include: ['src/content/**/*.mdx'],
+						pattern: 'src/content/@lang/@path',
+						type: 'dictionary',
+						merge: { 'es-LAT': ['es'] },
+					},
+				],
+			}),
+		);
+	});
 });
