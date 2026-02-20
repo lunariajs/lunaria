@@ -68,7 +68,7 @@
   },
   "devDependencies": {
     "@types/micromatch": "^4.0.3",
-    "@types/node": "^20.8.9",
+    "@types/node": "^22.10.3",
     "typescript": "^5.2.2",
     "zod-to-json-schema": "^3.22.1"
   },
