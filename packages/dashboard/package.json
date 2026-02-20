@@ -1,0 +1,62 @@
+{
+  "name": "@lunariajs/dashboard",
+  "version": "0.0.1",
+  "description": "Lunaria dashboard integration and template powered by Astro",
+  "keywords": [
+    "lunaria",
+    "template",
+    "dashboard",
+    "integration",
+    "withastro"
+  ],
+  "bugs": "https://github.com/lunariajs/lunaria/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lunariajs/lunaria.git",
+    "directory": "packages/dashboard"
+  },
+  "license": "MIT",
+  "author": "Yan Thomas",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./astro": {
+      "types": "./dist/astro.d.ts",
+      "default": "./dist/astro.js"
+    },
+    "./loader": {
+      "types": "./dist/loader.d.ts",
+      "default": "./dist/loader.js"
+    },
+    "./routes/*": "./dist/routes/*"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "README.md"
+  ],
+  "scripts": {
+    "prebuild": "node scripts/prebuild.ts",
+    "build": "pnpm prebuild && tsc",
+    "dev": "node --watch --watch-path=src scripts/dev.ts",
+    "test": "node --test \"tests/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@lunariajs/core": "workspace:^",
+    "@pierre/diffs": "^1.0.11",
+    "astro": "6.0.0-beta.14"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0"
+  },
+  "peerDependencies": {
+    "astro": "^6.0.0-beta.14"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

@@ -1,0 +1,64 @@
+---
+import ThemeSelector from './theme/ThemeSelector.astro';
+
+// Ensures page is correctly matched independently of trailing slash or not.
+const currentPage = Astro.url.pathname.replace(/\/$/, '') || '/';
+---
+
+<header class="page-header">
+  <nav class="page-navigation">
+    <a>Lunaria dashboard</a>
+    <ul>
+      {
+        [
+          { label: "Overview", href: "/" },
+          { label: "Locales", href: "/locales" },
+        ].map(({ label, href }) => (
+          <li>
+            <a
+              href={href}
+              aria-current={currentPage === href ? "page" : undefined}
+            >
+              {label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <ThemeSelector />
+  </nav>
+</header>
+
+<style>
+  .page-header {
+    width: 100%;
+    height: 4rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .page-navigation {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 86rem;
+    margin-inline: auto;
+    padding-inline: 3rem;
+  }
+
+  .page-navigation ul {
+    list-style: none;
+    display: flex;
+    gap: 1rem;
+  }
+
+  .page-navigation a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .page-navigation a[aria-current="page"] {
+    font-weight: 500;
+  }
+</style>

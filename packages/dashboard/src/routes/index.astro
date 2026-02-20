@@ -1,0 +1,16 @@
+---
+import LoadingFallback from '../components/LoadingFallback.astro';
+import StatusOverview from '../components/StatusOverview.astro';
+import Page from '../layouts/Page.astro';
+---
+
+<Page
+  title="Lunaria | Overview"
+  heading="Overview"
+  description="Lunaria dashboard overview page"
+>
+  <LoadingFallback>
+    <div slot="fallback">Loading Lunaria status overview...</div>
+    <StatusOverview />
+  </LoadingFallback>
+</Page>

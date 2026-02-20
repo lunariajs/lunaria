@@ -1,0 +1,82 @@
+---
+interface Props {
+	lang: string;
+	label: string;
+	status: {
+		done: number;
+		outdated: number;
+		missing: number;
+	};
+}
+
+const { lang, label, status } = Astro.props;
+---
+
+<li class="locale">
+  <a href={`/locales/${lang}`}>
+    <div class="locale-header">
+      <h2 class="locale-label">{label}</h2>
+      <small class="locale-lang">{lang}</small>
+    </div>
+    <p class="locale-description">
+      {status.done} done, {status.outdated} outdated, {status.missing} missing
+    </p>
+  </a>
+</li>
+
+<style>
+  .locale {
+    border: 1px solid var(--ln-color-gray-5);
+    padding: 1.5rem;
+    list-style: none;
+    position: relative;
+  }
+
+  .locale:focus-within {
+    outline: 2px solid;
+    background-color: var(--ln-color-bg-dim);
+  }
+
+  .locale:hover {
+    background-color: var(--ln-color-bg-dim);
+  }
+
+  .locale a::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+
+  .locale a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .locale a:focus {
+    outline: none;
+  }
+
+  .locale-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .locale-label {
+    font-size: var(--ln-text-lg);
+  }
+
+  .locale-lang {
+    font-size: var(--ln-text-xs);
+    text-transform: uppercase;
+  }
+
+  .locale-description {
+    font-size: var(--ln-text-sm);
+    margin-top: 0.25rem;
+  }
+</style>

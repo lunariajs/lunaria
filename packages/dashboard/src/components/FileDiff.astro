@@ -1,0 +1,72 @@
+---
+interface Props {
+	fileName: string;
+	oldContents: string;
+	newContents: string;
+	translationFileName?: string;
+	translationContents?: string;
+}
+
+const { fileName, oldContents, newContents, translationFileName, translationContents } =
+	Astro.props;
+
+const hasTranslation = !!translationFileName && !!translationContents;
+---
+
+<lunaria-file-diff
+  data-file-name={fileName}
+  data-old-contents={oldContents}
+  data-new-contents={newContents}
+  data-translation-file-name={hasTranslation ? translationFileName : undefined}
+  data-translation-contents={hasTranslation ? translationContents : undefined}
+>
+  <div class="diff-viewport" data-diff-viewport></div>
+</lunaria-file-diff>
+
+<style>
+  lunaria-file-diff {
+    /* Typography */
+    --diffs-font-family: var(--__ln-font-mono);
+    --diffs-header-font-family: var(--__ln-font);
+    --diffs-font-size: var(--ln-text-code);
+    --diffs-line-height: var(--ln-line-height);
+
+    /* Main background & foreground — match the dashboard's page colors */
+    --diffs-bg: var(--ln-color-bg);
+    --diffs-fg: var(--ln-color-text);
+
+    /* Separator / hunk expand bar */
+    --diffs-bg-separator-override: var(--ln-color-bg-dim);
+
+    /* Hover state */
+    --diffs-bg-hover-override: var(--ln-color-bg-dim);
+
+    /* Context (expanded unchanged lines) */
+    --diffs-bg-context-override: var(--ln-color-bg);
+
+    /* Addition colors — mapped to the dashboard's green palette */
+    --diffs-addition-color-override: var(--ln-color-green);
+    --diffs-bg-addition-override: var(--ln-color-green-low);
+
+    /* Deletion colors — mapped to the dashboard's red palette */
+    --diffs-deletion-color-override: var(--ln-color-red);
+    --diffs-bg-deletion-override: var(--ln-color-red-low);
+
+    /* Line number text */
+    --diffs-fg-number-override: var(--ln-color-gray-4);
+  }
+</style>
+
+<script>
+  class LunariaFileDiff extends HTMLElement {
+    constructor() {
+      super();
+    }
+
+    connectedCallback() {}
+
+    disconnectedCallback() {}
+  }
+
+  customElements.define("lunaria-file-diff", LunariaFileDiff);
+</script>

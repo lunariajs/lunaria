@@ -1,0 +1,114 @@
+---
+import ArrowDown from '../icons/ArrowDown.astro';
+import Laptop from '../icons/Laptop.astro';
+---
+
+<lunaria-theme-selector>
+  <label>
+    <Laptop width="16" height="16" class="icon label-icon" />
+    <span class="sr-only"> Select language</span>
+    <div class="icon-container"></div>
+    <select value="auto" autocomplete="off">
+      <option value="light" selected="false">Light</option>
+      <option value="dark" selected="false">Dark</option>
+      <option value="auto" selected="true">Auto</option>
+    </select>
+    <ArrowDown width="16" height="16" class="caret label-icon" />
+  </label>
+</lunaria-theme-selector>
+
+<style>
+  label {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  select {
+    border: 0;
+    padding-block: 0.625rem;
+    padding-inline: 2.5rem 0.625rem;
+    width: 6.5rem;
+    margin-inline: -1.5rem;
+    background-color: transparent;
+    text-overflow: ellipsis;
+    color: inherit;
+    cursor: pointer;
+    appearance: none;
+  }
+
+  option {
+    color: inherit;
+    background-color: var(--ln-color-bg);
+  }
+
+  .icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+</style>
+
+{/* Inlined to avoid FOUC. Uses global scope from `ThemeProvider.astro` */}
+<script is:inline>
+  LunariaThemeProvider.updatePickers();
+</script>
+
+<script>
+  type Theme = "auto" | "dark" | "light";
+
+  /** Key in `localStorage` to store color theme preference at. */
+  const storageKey = "lunaria-theme";
+
+  /** Get a type-safe theme string from any JS value (unknown values are coerced to `'auto'`). */
+  const parseTheme = (theme: unknown): Theme =>
+    theme === "auto" || theme === "dark" || theme === "light" ? theme : "auto";
+
+  /** Load the user’s preference from `localStorage`. */
+  const loadTheme = (): Theme =>
+    parseTheme(
+      typeof localStorage !== "undefined" && localStorage.getItem(storageKey),
+    );
+
+  /** Store the user’s preference in `localStorage`. */
+  function storeTheme(theme: Theme): void {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(
+        storageKey,
+        theme === "light" || theme === "dark" ? theme : "",
+      );
+    }
+  }
+
+  /** Get the preferred system color scheme. */
+  const getPreferredColorScheme = (): Theme =>
+    matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+
+  /** Update select menu UI, document theme, and local storage state. */
+  function onThemeChange(theme: Theme): void {
+    LunariaThemeProvider.updatePickers(theme);
+    document.documentElement.dataset.theme =
+      theme === "auto" ? getPreferredColorScheme() : theme;
+    storeTheme(theme);
+  }
+
+  // React to changes in system color scheme.
+  matchMedia(`(prefers-color-scheme: light)`).addEventListener("change", () => {
+    if (loadTheme() === "auto") onThemeChange("auto");
+  });
+
+  class LunariaThemeSelector extends HTMLElement {
+    constructor() {
+      super();
+      onThemeChange(loadTheme());
+      this.querySelector("select")?.addEventListener("change", (e) => {
+        if (e.currentTarget instanceof HTMLSelectElement) {
+          onThemeChange(parseTheme(e.currentTarget.value));
+        }
+      });
+    }
+  }
+  customElements.define("lunaria-theme-selector", LunariaThemeSelector);
+</script>

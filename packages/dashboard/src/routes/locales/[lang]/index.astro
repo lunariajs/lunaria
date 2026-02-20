@@ -1,0 +1,20 @@
+---
+import { createLunaria } from '@lunariajs/core';
+import Page from '../../../layouts/Page.astro';
+
+export async function getStaticPaths() {
+	const lunaria = await createLunaria();
+
+	return lunaria.config.locales.map(({ lang, label }) => {
+		return { params: { lang: lang }, props: { lang, label } };
+	});
+}
+
+const { lang, label } = Astro.props;
+---
+
+<Page
+  title={`Lunaria | ${label} | ${lang.toUpperCase()}`}
+  heading={label}
+  description={`Lunaria dashboard locale page for ${label} (${lang.toUpperCase()})`}
+/>

@@ -1,0 +1,11 @@
+{
+  "extends": "@total-typescript/tsconfig/tsc/dom/library-monorepo",
+  "include": ["src"],
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "erasableSyntaxOnly": true,
+    "rewriteRelativeImportExtensions": true
+  },
+  "references": [{ "path": "./tsconfig.test.json" }]
+}

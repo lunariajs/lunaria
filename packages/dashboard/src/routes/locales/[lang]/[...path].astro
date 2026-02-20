@@ -1,0 +1,63 @@
+---
+import { basename } from 'node:path';
+import { createLunaria } from '@lunariajs/core';
+import FileDiff from '../../../components/FileDiff.astro';
+import Page from '../../../layouts/Page.astro';
+
+export async function getStaticPaths() {
+	const lunaria = await createLunaria();
+	const paths = await lunaria.getSourcePaths();
+
+	return lunaria.config.locales.flatMap(({ lang, label }) => {
+		return paths.flatMap((path) => {
+			const pattern = lunaria.findFilesEntry(path)?.pattern;
+
+			if (!pattern) {
+				return [];
+			}
+
+			const pathResolver = lunaria.getPathResolver(pattern);
+			const localePath = pathResolver.toPath(path, lang);
+
+			return { params: { path: localePath, lang }, props: { label } };
+		});
+	});
+}
+
+const { path, lang } = Astro.params;
+const { label } = Astro.props;
+
+const lunaria = await createLunaria();
+const status = await lunaria.getFileStatus(path);
+
+const localization = status?.localizations.find((localization) => localization?.lang === lang);
+
+if (!status || !localization || localization.status === 'missing') {
+	return Astro.redirect('/404');
+}
+
+const sourceContentsSinceLastUpdate = await lunaria.git.simpleGit.show([
+	`${localization.git.latestTrackedCommit.hash}:${status.source.path}`,
+]);
+const sourceContentsNow = status.source.contents;
+---
+
+<Page
+  title={`Lunaria | ${lang.toUpperCase()} | ${path}`}
+  description={`Lunaria dashboard file page for ${label} (${lang})`}
+>
+  <h1>{localization.path}</h1>
+  {
+    localization.status === "outdated" ? (
+      <FileDiff
+        fileName={basename(status.source.path)}
+        oldContents={sourceContentsSinceLastUpdate}
+        newContents={sourceContentsNow}
+        translationFileName={basename(localization.path)}
+        translationContents={localization.contents}
+      />
+    ) : (
+      <p>This translation is up to date!</p>
+    )
+  }
+</Page>

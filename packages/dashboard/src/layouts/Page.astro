@@ -1,0 +1,53 @@
+---
+import Navigation from '../components/Navigation.astro';
+import Base from './Base.astro';
+
+interface Props {
+	title: string;
+	heading?: string;
+	description: string;
+}
+---
+
+<Base {...Astro.props}>
+  <div class="page-frame">
+    <Navigation />
+    <main class="main-container">
+      {
+        Astro.props.heading && (
+          <h1 class="page-heading">{Astro.props.heading}</h1>
+        )
+      }
+      <slot />
+    </main>
+  </div>
+</Base>
+
+<style>
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .page-frame {
+    flex-basis: 0;
+    flex-grow: 999;
+    min-inline-size: 60%;
+    background-color: var(--ln-color-bg);
+  }
+
+  .main-container {
+    max-width: 86rem;
+    margin-inline: auto;
+    padding: 3rem;
+  }
+
+  .page-heading {
+    margin-bottom: 1.5rem;
+  }
+</style>

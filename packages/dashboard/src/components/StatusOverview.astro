@@ -1,0 +1,11 @@
+---
+import { createLunaria } from '@lunariajs/core';
+
+const lunaria = await createLunaria();
+const status = await lunaria.getFullStatus();
+---
+
+<h1>Status overview</h1>
+<code>
+  <p>{JSON.stringify(status, null, "\t")}</p>
+</code>

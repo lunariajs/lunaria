@@ -1,0 +1,35 @@
+---
+import { createLunaria } from '@lunariajs/core';
+import Locale from '../../components/Locale.astro';
+import Page from '../../layouts/Page.astro';
+
+const lunaria = await createLunaria();
+const locales = lunaria.config.locales;
+---
+
+<Page
+  title="Lunaria | Locales"
+  heading="Locales"
+  description="Lunaria dashboard locales page"
+>
+  <ul class="locales-container">
+    {
+      locales.map((locale) => (
+        <Locale
+          lang={locale.lang}
+          label={locale.label}
+          status={{ done: 0, outdated: 0, missing: 0 }}
+        />
+      ))
+    }
+  </ul>
+</Page>
+
+<style>
+  .locales-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 0;
+  }
+</style>

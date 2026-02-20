@@ -1,0 +1,48 @@
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+* {
+	margin: 0;
+}
+
+html {
+	color-scheme: light;
+	accent-color: var(--ln-color-accent);
+}
+
+html[data-theme="dark"] {
+	color-scheme: dark;
+}
+
+body {
+	font-family: var(--__ln-font);
+	line-height: var(--ln-line-height);
+	-webkit-font-smoothing: antialiased;
+	color: var(--ln-color-text);
+	background-color: var(--ln-color-bg);
+}
+
+input,
+button,
+textarea,
+select {
+	font: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+code {
+	overflow-wrap: anywhere;
+}
+
+code {
+	font-family: var(--__ln-font-mono);
+}

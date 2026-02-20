@@ -1,0 +1,32 @@
+---
+// Dashboard-wide style definitions
+import '../styles/reset.css';
+import '../styles/props.css';
+import '../styles/utils.css';
+
+import ThemeProvider from '../components/theme/ThemeProvider.astro';
+
+interface Props {
+	title: string;
+	description: string;
+}
+
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : Astro.url;
+
+const { title, description } = Astro.props;
+---
+
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="canonical" href={canonical.href} />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml" />
+    <ThemeProvider />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
