@@ -12,11 +12,10 @@ export function getStringFromFormat(
 		[part: string]: string;
 	}
 ) {
-	let formatResult = format;
-	Object.keys(placeholders).forEach((key) => {
-		formatResult = formatResult.replace(key, placeholders[key] ?? '');
-	});
-	return formatResult;
+	return Object.keys(placeholders).reduce((acc, key) => {
+		const value = placeholders[key] ?? '';
+		return acc.replace(key, value);
+	}, format);
 }
 
 export function loadWithJiti(path: string) {
