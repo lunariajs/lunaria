@@ -19,12 +19,12 @@ jobs:
           fetch-depth: 0
 
       - name: Setup PNPM
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.18.0
           cache: 'pnpm'
 
       - name: Install Dependencies
