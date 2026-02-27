@@ -5,7 +5,7 @@ import { Traverse } from 'neotraverse/modern';
 import type { OptionalKeys } from '../config/types.ts';
 import { InvalidDictionaryStructure, UnsupportedDictionaryFileFormat } from '../errors/errors.ts';
 import { DictionarySchema } from './schema.ts';
-import type { Dictionary } from './types.ts';
+import type { Dictionary, KeyPath } from './types.ts';
 
 export async function getMissingDictionaryKeys(
 	sourceDictionary: { fsPath: string; contents: string },
@@ -104,7 +104,7 @@ export function findMissingKeys(
 	const sourceDictTraverse = new Traverse(sourceDict);
 	const localeDictTraverse = new Traverse(localeDict);
 
-	const hasOptionalParent = (path: PropertyKey[]) => {
+	const hasOptionalParent = (path: KeyPath) => {
 		// is upmost parent
 		if (path.length === 1) return optionalKeysTraverse.get(path) === true;
 
@@ -115,8 +115,7 @@ export function findMissingKeys(
 		return hasOptionalParent([...path].slice(0, -1));
 	};
 
-	const missingKeys = sourceDictTraverse
-		.paths()
+	const missingKeys = (sourceDictTraverse.paths() as KeyPath[])
 		.map((path) => {
 			// Ignore non-leafs
 			if (typeof sourceDictTraverse.get(path) === 'object') return undefined;

@@ -23,7 +23,7 @@ export type File =
 			optionalKeys?: OptionalKeys;
 	  });
 
-type GitHostingOptions = 'github' | 'gitlab';
+export type GitHostingOptions = 'github' | 'gitlab';
 
 export type Locale = {
 	label: string;
@@ -56,7 +56,7 @@ export interface LunariaUserConfig {
 		name: string;
 		branch?: string;
 		rootDir?: string;
-		hosting?: 'github' | 'gitlab';
+		hosting?: GitHostingOptions;
 	};
 	sourceLocale?: Locale;
 	locales?: [Locale, ...Locale[]];

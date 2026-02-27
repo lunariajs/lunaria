@@ -21,6 +21,7 @@ export type * from './config/types.ts';
 export type * from './files/types.ts';
 export type { LunariaIntegration } from './integrations/types.ts';
 export type * from './status/types.ts';
+export type { LunariaOpts } from './types.ts';
 
 class Lunaria {
 	readonly config: LunariaConfig;
@@ -308,6 +309,7 @@ class Lunaria {
 								);
 
 								return {
+									type: 'dictionary' as const,
 									missingKeys,
 								};
 							} catch (e) {
@@ -317,7 +319,7 @@ class Lunaria {
 								process.exit(1);
 							}
 						}
-						return {};
+						return { type: 'universal' as const };
 					};
 
 					localizations.push({

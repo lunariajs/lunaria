@@ -1,8 +1,15 @@
-import type { EntryFileType, File } from '../config/types.ts';
+import type {
+	DictionaryFileEntry,
+	EntryFileType,
+	File,
+	UniversalFileEntry,
+} from '../config/types.ts';
 
 export type Dictionary = {
 	[k: string]: string | Dictionary;
 };
+
+export type KeyPath = string[];
 
 export type Commit = {
 	author: {
@@ -35,18 +42,24 @@ type BaseLocalizationEntry = {
 type MissingLocalizationEntry = BaseLocalizationEntry & { status: MissingStatus };
 
 type ExistingLocalizationEntry = BaseLocalizationEntry & {
+	type: EntryFileType;
 	git: FileGitData;
 	status: OutdatedStatus | UpToDateStatus;
 	contents: string;
 };
 
+type UniversalLocalizationEntry = ExistingLocalizationEntry & {
+	type: UniversalFileEntry;
+};
+
 type DictionaryLocalizationEntry = ExistingLocalizationEntry & {
-	missingKeys: string[];
+	type: DictionaryFileEntry;
+	missingKeys: KeyPath[];
 };
 
 export type StatusLocalizationEntry<T extends EntryFileType = EntryFileType> =
 	| MissingLocalizationEntry
-	| (T extends 'dictionary' ? DictionaryLocalizationEntry : ExistingLocalizationEntry);
+	| (T extends 'dictionary' ? DictionaryLocalizationEntry : UniversalLocalizationEntry);
 
 export type StatusEntry<T extends EntryFileType = EntryFileType> = File & {
 	source: {
