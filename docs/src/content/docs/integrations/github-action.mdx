@@ -41,16 +41,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Necessary for Lunaria to work properly
           # Makes the action clone the entire git history
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - run: npm install
@@ -84,20 +84,20 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Necessary for Lunaria to work properly
           # Makes the action clone the entire git history
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Setup PNPM
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v5
 
       - run: pnpm install
 
@@ -130,14 +130,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Necessary for Lunaria to work properly
           # Makes the action clone the entire git history
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: yarn
@@ -183,7 +183,7 @@ By default, the Action won't run on a private repository for a lack of permissio
 
    ```yml ins={7} mark="PAT"
    - name: Checkout
-       uses: actions/checkout@v4
+       uses: actions/checkout@v6
        with:
          # Necessary for Lunaria to work properly
          # Makes the action clone the entire git history
