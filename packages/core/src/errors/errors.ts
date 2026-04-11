@@ -57,7 +57,7 @@ export const UnsupportedDictionaryFileFormat = {
 	name: 'UnsupportedDictionaryFileFormat',
 	title: 'An unsupported file format was found.',
 	message: (file: string) =>
-		`The file \`${file}\` has an unsupported file format. Dictionaries can be Markdown/MDX/Markdoc, JSON, or JavaScript/TypeScript modules. Use one of these file formats or instead track this file without key completion checking by setting it to \`type: "universal"\` instead.`,
+		`The file \`${file}\` has an unsupported file format. Dictionaries can be Markdown/MDX/Markdoc, JSON, gettext PO/POT, or JavaScript/TypeScript modules. Use one of these file formats or instead track this file without key completion checking by setting it to \`type: "universal"\` instead.`,
 } satisfies ErrorContext;
 
 export const UnsupportedIntegrationSelfUpdate = {

@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "consola": "^3.4.1",
+    "gettext-parser": "^9.0.2",
     "jiti": "2.3.3",
     "js-yaml": "^4.1.0",
     "neotraverse": "^0.6.18",
@@ -53,6 +54,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/gettext-parser": "^9.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.10.6",
     "@types/picomatch": "^3.0.1"

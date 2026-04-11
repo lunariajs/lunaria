@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { findMissingKeys, mergeBaseDictionaries } from '../../src/status/status.ts';
+import { findMissingKeys, loadDictionary, mergeBaseDictionaries } from '../../src/status/status.ts';
 
 describe('findMissingKeys', () => {
 	it('should return all missing keys when no optional keys are set', () => {
@@ -155,5 +155,150 @@ describe('mergeBaseDictionaries', () => {
 
 		const effective = mergeBaseDictionaries(locale, [base1, base2]);
 		assert.deepEqual(findMissingKeys(undefined, source, effective), [['d']]);
+	});
+});
+
+describe('loadDictionary with .po files', () => {
+	it('should parse basic msgid/msgstr pairs', async () => {
+		const po = [
+			'msgid ""',
+			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
+			'',
+			'msgid "Hello"',
+			'msgstr "Hola"',
+			'',
+			'msgid "Goodbye"',
+			'msgstr "Adiós"',
+		].join('\n');
+
+		const dict = await loadDictionary('locale.po', po);
+		assert.deepEqual(dict, { Hello: 'Hola', Goodbye: 'Adiós' });
+	});
+
+	it('should nest entries with msgctxt under the context key', async () => {
+		const po = [
+			'msgid ""',
+			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
+			'',
+			'msgid "Hello"',
+			'msgstr "Hola"',
+			'',
+			'msgctxt "menu"',
+			'msgid "File"',
+			'msgstr "Archivo"',
+			'',
+			'msgctxt "menu"',
+			'msgid "Edit"',
+			'msgstr "Editar"',
+		].join('\n');
+
+		const dict = await loadDictionary('locale.po', po);
+		assert.deepEqual(dict, {
+			Hello: 'Hola',
+			menu: { File: 'Archivo', Edit: 'Editar' },
+		});
+	});
+
+	it('should omit entries with empty msgstr in .po files', async () => {
+		const po = [
+			'msgid ""',
+			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
+			'',
+			'msgid "Hello"',
+			'msgstr "Hola"',
+			'',
+			'msgid "Untranslated"',
+			'msgstr ""',
+		].join('\n');
+
+		const dict = await loadDictionary('locale.po', po);
+		assert.deepEqual(dict, { Hello: 'Hola' });
+	});
+
+	it('should emit all entries for .pot files using msgid as value', async () => {
+		const pot = [
+			'msgid ""',
+			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
+			'',
+			'msgid "Hello"',
+			'msgstr ""',
+			'',
+			'msgid "Goodbye"',
+			'msgstr ""',
+		].join('\n');
+
+		const dict = await loadDictionary('messages.pot', pot);
+		assert.deepEqual(dict, { Hello: 'Hello', Goodbye: 'Goodbye' });
+	});
+
+	it('should omit fuzzy entries in .po files', async () => {
+		const po = [
+			'msgid ""',
+			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
+			'',
+			'msgid "Hello"',
+			'msgstr "Hola"',
+			'',
+			'#, fuzzy',
+			'msgid "Maybe"',
+			'msgstr "Quizás"',
+		].join('\n');
+
+		const dict = await loadDictionary('locale.po', po);
+		assert.deepEqual(dict, { Hello: 'Hola' });
+	});
+
+	it('should require all plural forms to be non-empty', async () => {
+		const po = [
+			'msgid ""',
+			'msgstr "Content-Type: text/plain; charset=UTF-8\\nPlural-Forms: nplurals=2; plural=(n != 1);\\n"',
+			'',
+			'msgid "One file"',
+			'msgid_plural "%d files"',
+			'msgstr[0] "Un archivo"',
+			'msgstr[1] "%d archivos"',
+			'',
+			'msgid "One item"',
+			'msgid_plural "%d items"',
+			'msgstr[0] "Un elemento"',
+			'msgstr[1] ""',
+		].join('\n');
+
+		const dict = await loadDictionary('locale.po', po);
+		assert.deepEqual(dict, { 'One file': 'Un archivo' });
+	});
+
+	it('should work end-to-end with findMissingKeys', async () => {
+		const pot = [
+			'msgid ""',
+			'msgstr ""',
+			'',
+			'msgid "Hello"',
+			'msgstr ""',
+			'',
+			'msgid "Goodbye"',
+			'msgstr ""',
+			'',
+			'msgctxt "menu"',
+			'msgid "File"',
+			'msgstr ""',
+		].join('\n');
+
+		const po = [
+			'msgid ""',
+			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
+			'',
+			'msgid "Hello"',
+			'msgstr "Hola"',
+			'',
+			'msgid "Goodbye"',
+			'msgstr ""',
+		].join('\n');
+
+		const sourceDict = await loadDictionary('messages.pot', pot);
+		const localeDict = await loadDictionary('es.po', po);
+
+		const missing = findMissingKeys(undefined, sourceDict, localeDict);
+		assert.deepEqual(missing, [['Goodbye'], ['menu', 'File']]);
 	});
 });
