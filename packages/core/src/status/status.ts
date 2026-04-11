@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
-import { createJiti } from 'jiti';
 import { po } from 'gettext-parser';
+import { createJiti } from 'jiti';
 import yaml from 'js-yaml';
 import { Traverse } from 'neotraverse/modern';
 import type { OptionalKeys } from '../config/types.ts';
