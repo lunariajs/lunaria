@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { createJiti } from 'jiti';
+import { po } from 'gettext-parser';
 import yaml from 'js-yaml';
 import { Traverse } from 'neotraverse/modern';
 import type { OptionalKeys } from '../config/types.ts';
@@ -156,5 +157,37 @@ export async function loadDictionary(path: string, contents: string) {
 		return JSON.parse(contents);
 	}
 
+	if (/\.pot?$/.test(path)) {
+		return parsePoFile(contents, path);
+	}
+
 	throw new Error(UnsupportedDictionaryFileFormat.message(path));
+}
+
+function parsePoFile(contents: string, path: string): Dictionary {
+	const parsed = po.parse(contents);
+	const isTemplate = path.endsWith('.pot');
+	const dict: Dictionary = {};
+
+	for (const [context, entries] of Object.entries(parsed.translations)) {
+		for (const [msgid, entry] of Object.entries(entries)) {
+			if (msgid === '') continue;
+
+			const isFuzzy = entry.comments?.flag?.includes('fuzzy') ?? false;
+			const allFormsTranslated = entry.msgstr.length > 0 && entry.msgstr.every((s) => s !== '');
+
+			if (!isTemplate && (isFuzzy || !allFormsTranslated)) continue;
+
+			const value = isTemplate ? msgid : (entry.msgstr[0] as string);
+
+			if (context === '') {
+				dict[msgid] = value;
+			} else {
+				if (!dict[context]) dict[context] = {};
+				(dict[context] as Dictionary)[msgid] = value;
+			}
+		}
+	}
+
+	return dict;
 }
