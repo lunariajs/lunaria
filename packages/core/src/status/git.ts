@@ -61,7 +61,6 @@ export class LunariaGitInstance {
 				)
 			: await this.getFileCommits(path);
 
-		// TODO: Confirm log.all[0] === log.latest.
 		const latestCommit = commits[0];
 
 		// Edge case: sometimes all the changes for a file (or the only one)

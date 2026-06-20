@@ -13,7 +13,6 @@ const RepositorySchema = z.object({
 			message:
 				'The root directory should not be a relative path, it should follow the example: `examples/vitepress`',
 		})
-		// TODO: See if this transform is even necessary still?
 		.transform((path) => stripTrailingSlash(path)),
 	hosting: z.union([z.literal('github'), z.literal('gitlab')]).default('github'),
 });
