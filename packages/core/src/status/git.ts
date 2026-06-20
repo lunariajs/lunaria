@@ -53,7 +53,13 @@ export class LunariaGitInstance {
 		// The cache will keep the latest tracked commit hash, which means it will be able
 		// to completely skip looking into older commits, considerably increasing performance.
 		const fromCommit = this.#cache[path] ? `${this.#cache[path]}^` : undefined;
-		const commits = await this.getFileCommits(path, fromCommit);
+		const commits = fromCommit
+			? await this.getFileCommits(path, fromCommit).catch(() =>
+					// The cached commit might be the repository's root commit, or it might no longer
+					// exist locally after a history rewrite. In those cases, fall back to a full history.
+					this.getFileCommits(path),
+				)
+			: await this.getFileCommits(path);
 
 		// TODO: Confirm log.all[0] === log.latest.
 		const latestCommit = commits[0];
