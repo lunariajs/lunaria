@@ -1,4 +1,7 @@
 import { strict as assert } from 'node:assert';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { findMissingKeys, loadDictionary, mergeBaseDictionaries } from '../../src/status/status.ts';
 
@@ -158,48 +161,70 @@ describe('mergeBaseDictionaries', () => {
 	});
 });
 
-describe('loadDictionary with .po files', () => {
-	it('should parse basic msgid/msgstr pairs', async () => {
-		const po = [
-			'msgid ""',
-			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
-			'',
-			'msgid "Hello"',
-			'msgstr "Hola"',
-			'',
-			'msgid "Goodbye"',
-			'msgstr "Adiós"',
-		].join('\n');
+describe('loadDictionary', () => {
+	it('should load JSON dictionaries', async () => {
+		const dictionary = { hello: 'Hello', nested: { bye: 'Bye' } };
+		const dict = await loadTempDictionary('dictionary.json', JSON.stringify(dictionary));
 
-		const dict = await loadDictionary('locale.po', po);
-		assert.deepEqual(dict, { Hello: 'Hola', Goodbye: 'Adiós' });
+		assert.deepEqual(dict, dictionary);
 	});
 
-	it('should nest entries with msgctxt under the context key', async () => {
-		const po = [
-			'msgid ""',
-			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
-			'',
-			'msgid "Hello"',
-			'msgstr "Hola"',
-			'',
-			'msgctxt "menu"',
-			'msgid "File"',
-			'msgstr "Archivo"',
-			'',
-			'msgctxt "menu"',
-			'msgid "Edit"',
-			'msgstr "Editar"',
-		].join('\n');
+	it('should load YAML dictionaries', async () => {
+		const yaml = ['hello: Hello', 'nested:', '  bye: Bye'].join('\n');
 
-		const dict = await loadDictionary('locale.po', po);
-		assert.deepEqual(dict, {
-			Hello: 'Hola',
-			menu: { File: 'Archivo', Edit: 'Editar' },
+		assert.deepEqual(await loadTempDictionary('dictionary.yaml', yaml), {
+			hello: 'Hello',
+			nested: { bye: 'Bye' },
+		});
+		assert.deepEqual(await loadTempDictionary('dictionary.yml', yaml), {
+			hello: 'Hello',
+			nested: { bye: 'Bye' },
 		});
 	});
 
-	it('should omit entries with empty msgstr in .po files', async () => {
+	it('should load JavaScript module dictionaries', async () => {
+		const dict = await loadTempDictionary(
+			'dictionary.js',
+			'export default { hello: "Hello", nested: { bye: "Bye" } };',
+		);
+
+		assert.deepEqual(dict, { hello: 'Hello', nested: { bye: 'Bye' } });
+	});
+
+	it('should load TypeScript module dictionaries', async () => {
+		const dict = await loadTempDictionary(
+			'dictionary.ts',
+			'export default { hello: "Hello", nested: { bye: "Bye" } };',
+		);
+
+		assert.deepEqual(dict, { hello: 'Hello', nested: { bye: 'Bye' } });
+	});
+
+	it('should load gettext PO and POT dictionaries', async () => {
+		const pot = [
+			'msgid ""',
+			'msgstr ""',
+			'',
+			'msgid "Hello"',
+			'msgstr ""',
+			'',
+			'msgid "Untranslated"',
+			'msgstr ""',
+			'',
+			'#, fuzzy',
+			'msgid "Maybe"',
+			'msgstr ""',
+			'',
+			'msgctxt "menu"',
+			'msgid "File"',
+			'msgstr ""',
+			'',
+			'msgid "One file"',
+			'msgid_plural "%d files"',
+			'msgstr[0] ""',
+			'msgstr[1] ""',
+		].join('\n');
+
 		const po = [
 			'msgid ""',
 			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
@@ -209,49 +234,14 @@ describe('loadDictionary with .po files', () => {
 			'',
 			'msgid "Untranslated"',
 			'msgstr ""',
-		].join('\n');
-
-		const dict = await loadDictionary('locale.po', po);
-		assert.deepEqual(dict, { Hello: 'Hola' });
-	});
-
-	it('should emit all entries for .pot files using msgid as value', async () => {
-		const pot = [
-			'msgid ""',
-			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
-			'',
-			'msgid "Hello"',
-			'msgstr ""',
-			'',
-			'msgid "Goodbye"',
-			'msgstr ""',
-		].join('\n');
-
-		const dict = await loadDictionary('messages.pot', pot);
-		assert.deepEqual(dict, { Hello: 'Hello', Goodbye: 'Goodbye' });
-	});
-
-	it('should omit fuzzy entries in .po files', async () => {
-		const po = [
-			'msgid ""',
-			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
-			'',
-			'msgid "Hello"',
-			'msgstr "Hola"',
 			'',
 			'#, fuzzy',
 			'msgid "Maybe"',
-			'msgstr "Quizás"',
-		].join('\n');
-
-		const dict = await loadDictionary('locale.po', po);
-		assert.deepEqual(dict, { Hello: 'Hola' });
-	});
-
-	it('should require all plural forms to be non-empty', async () => {
-		const po = [
-			'msgid ""',
-			'msgstr "Content-Type: text/plain; charset=UTF-8\\nPlural-Forms: nplurals=2; plural=(n != 1);\\n"',
+			'msgstr "Quiza"',
+			'',
+			'msgctxt "menu"',
+			'msgid "File"',
+			'msgstr "Archivo"',
 			'',
 			'msgid "One file"',
 			'msgid_plural "%d files"',
@@ -264,41 +254,35 @@ describe('loadDictionary with .po files', () => {
 			'msgstr[1] ""',
 		].join('\n');
 
-		const dict = await loadDictionary('locale.po', po);
-		assert.deepEqual(dict, { 'One file': 'Un archivo' });
-	});
+		const sourceDict = await loadTempDictionary('messages.pot', pot);
+		const localeDict = await loadTempDictionary('es.po', po);
 
-	it('should work end-to-end with findMissingKeys', async () => {
-		const pot = [
-			'msgid ""',
-			'msgstr ""',
-			'',
-			'msgid "Hello"',
-			'msgstr ""',
-			'',
-			'msgid "Goodbye"',
-			'msgstr ""',
-			'',
-			'msgctxt "menu"',
-			'msgid "File"',
-			'msgstr ""',
-		].join('\n');
-
-		const po = [
-			'msgid ""',
-			'msgstr "Content-Type: text/plain; charset=UTF-8\\n"',
-			'',
-			'msgid "Hello"',
-			'msgstr "Hola"',
-			'',
-			'msgid "Goodbye"',
-			'msgstr ""',
-		].join('\n');
-
-		const sourceDict = await loadDictionary('messages.pot', pot);
-		const localeDict = await loadDictionary('es.po', po);
+		assert.deepEqual(sourceDict, {
+			Hello: 'Hello',
+			Untranslated: 'Untranslated',
+			Maybe: 'Maybe',
+			menu: { File: 'File' },
+			'One file': 'One file',
+		});
+		assert.deepEqual(localeDict, {
+			Hello: 'Hola',
+			menu: { File: 'Archivo' },
+			'One file': 'Un archivo',
+		});
 
 		const missing = findMissingKeys(undefined, sourceDict, localeDict);
-		assert.deepEqual(missing, [['Goodbye'], ['menu', 'File']]);
+		assert.deepEqual(missing, [['Untranslated'], ['Maybe']]);
 	});
 });
+
+async function loadTempDictionary(fileName: string, contents: string) {
+	const dir = mkdtempSync(join(tmpdir(), 'lunaria-test-dictionary-'));
+	const path = join(dir, fileName);
+
+	try {
+		writeFileSync(path, contents);
+		return await loadDictionary(path, contents);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+}
