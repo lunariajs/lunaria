@@ -137,7 +137,6 @@ export function findMissingKeys(
 	return missingKeys;
 }
 
-// TODO: Add integration tests for this function
 export async function loadDictionary(path: string, contents: string) {
 	/** Regex to match ESM and CJS JavaScript/TypeScript files. */
 	if (/\.(c|m)?(ts|js)$/.test(path)) {
