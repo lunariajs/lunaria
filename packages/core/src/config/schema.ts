@@ -108,25 +108,36 @@ export const LunariaConfigSchema = BaseLunariaConfigSchema.superRefine((config, 
 		locales.add(locale);
 	}
 
-	let params: Array<string> | undefined;
-	for (const { parameters, lang } of [config.sourceLocale, ...config.locales]) {
-		// Since the sourceLocale is evaluated first in the array, we can use it
-		// to ensure whe are properly checking no locales has the `parameters` field.
-		if (!params && parameters && config.sourceLocale.parameters) {
-			params = Object.keys(parameters);
-		}
+	const sourceParameterKeys = config.sourceLocale.parameters
+		? Object.keys(config.sourceLocale.parameters).sort()
+		: undefined;
 
-		if (parameters && Object.keys(parameters).join(',') !== params?.join(',')) {
+	for (const { parameters, lang } of [config.sourceLocale, ...config.locales]) {
+		const parameterKeys = parameters ? Object.keys(parameters).sort() : undefined;
+
+		if (!sourceParameterKeys && parameterKeys) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
 				message: 'All locales must have the same `parameters` keys',
 			});
 		}
 
-		if (params && !parameters) {
+		if (sourceParameterKeys && !parameterKeys) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
 				message: `All locales must have the same \`parameters\` keys. Locale ${lang} does not have \`parameters\``,
+			});
+		}
+
+		if (
+			sourceParameterKeys &&
+			parameterKeys &&
+			(sourceParameterKeys.length !== parameterKeys.length ||
+				!sourceParameterKeys.every((parameter, index) => parameter === parameterKeys[index]))
+		) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: 'All locales must have the same `parameters` keys',
 			});
 		}
 	}
