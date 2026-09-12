@@ -1,24 +1,27 @@
 {
   "name": "lunaria-root",
-  "private": true,
   "version": "1.0.0",
-  "scripts": {
-    "docs": "pnpm --filter lunaria-docs dev",
-    "build": "pnpm run build:core",
-    "build:core": "pnpm --filter @lunariajs/core build",
-    "lint": "pnpm run lint:core",
-    "lint:core": "pnpm --filter @lunariajs/core lint",
-    "format": "prettier -w --cache --plugin prettier-plugin-astro .",
-    "version": "pnpm changeset version && pnpm i --no-frozen-lockfile"
-  },
+  "private": true,
   "license": "MIT",
-  "devDependencies": {
-    "@changesets/changelog-github": "^0.5.0",
-    "@changesets/cli": "^2.26.2",
-    "prettier": "3.0.3",
-    "prettier-plugin-astro": "0.12.0",
-    "prettier-plugin-organize-imports": "^3.2.3",
-    "unbuild": "^2.0.0"
+  "scripts": {
+    "build": "pnpm turbo build --filter=!lunaria-docs",
+    "build:core": "pnpm turbo build --filter=@lunariajs/core",
+    "dev": "pnpm turbo dev --filter=lunaria-docs",
+    "test": "pnpm turbo test",
+    "docs": "pnpm --filter lunaria-docs dev"
   },
-  "packageManager": "pnpm@8.7.6"
+  "devDependencies": {
+    "@biomejs/biome": "2.5.13",
+    "@changesets/changelog-github": "^0.5.0",
+    "@changesets/cli": "^2.27.11",
+    "@total-typescript/tsconfig": "^1.0.4",
+    "pkg-pr-new": "^0.0.20",
+    "turbo": "^2.3.3",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=22.18.0",
+    "pnpm": ">=10.30.1"
+  },
+  "packageManager": "pnpm@10.30.1+sha512.3590e550d5384caa39bd5c7c739f72270234b2f6059e13018f975c313b1eb9fefcc09714048765d4d9efe961382c312e624572c0420762bdc5d5940cdf9be73a"
 }

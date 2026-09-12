@@ -1,86 +1,139 @@
-import { existsSync, rmSync } from 'node:fs';
-import os from 'node:os';
-import { join, resolve } from 'node:path';
+import { cpus } from 'node:os';
+import type { ConsolaInstance } from 'consola';
+import picomatch from 'picomatch';
 import { simpleGit } from 'simple-git';
-import { error, info } from '../cli/console.js';
-import type { LunariaConfig } from '../config/index.js';
+import type { LunariaConfig } from '../config/types.ts';
+import { UncommittedFileFound } from '../errors/errors.ts';
+import type { RegExpGroups } from '../utils/types.ts';
+import type { Commit } from './types.ts';
 
-export const git = simpleGit({
-	maxConcurrentProcesses: Math.max(2, Math.min(32, os.cpus().length)),
-});
+export class LunariaGitInstance {
+	simpleGit = simpleGit({
+		maxConcurrentProcesses: Math.max(2, Math.min(32, cpus().length)),
+	});
+	#config: LunariaConfig;
+	#logger: ConsolaInstance;
+	#force: boolean;
+	#cache: Record<string, string>;
 
-/** Creates a clone of the git history to be used on platforms
- * that only allow shallow repositories (e.g. Vercel) and returns
- * `true` if it's running on a shallow repository.
- */
-export async function handleShallowRepo({ cloneDir, repository }: LunariaConfig) {
-	const gitHostingLinks = getGitHostingLinks(repository);
-	const isShallowRepo = (await git.revparse(['--is-shallow-repository'])) === 'true';
-
-	if (isShallowRepo) {
-		console.log(
-			info(
-				"Shallow repository detected. A clone of your repository's history will be downloaded and used. "
-			)
-		);
-
-		const target = resolve(cloneDir);
-
-		if (existsSync(target)) rmSync(target, { recursive: true, force: true });
-
-		await git.clone(gitHostingLinks.clone(), target, ['--bare', '--filter=blob:none']);
-		// Use the clone as the git directory for all tasks
-		await git.cwd({ path: target, root: true });
+	constructor(
+		config: LunariaConfig,
+		logger: ConsolaInstance,
+		cache: Record<string, string>,
+		force = false,
+	) {
+		this.#logger = logger;
+		this.#config = config;
+		this.#force = force;
+		this.#cache = cache;
 	}
 
-	return isShallowRepo;
-}
-
-export async function getFileHistory(path: string) {
-	try {
-		const log = await git.log({
+	async getFileCommits(path: string, from?: string, to?: string): Promise<Commit[]> {
+		const commits = await this.simpleGit.log({
 			file: path,
 			strictDate: true,
+			from,
+			to,
 		});
 
-		return {
-			latest: log.latest,
-			all: log.all,
-		};
-	} catch (e) {
-		console.error(error('Failed to find commits. Have you made any commits in your branch yet?'));
-		process.exit(1);
+		return commits.all.map((commit) => ({
+			author: {
+				name: commit.author_name,
+				email: commit.author_email,
+			},
+			message: commit.message,
+			body: commit.body,
+			date: new Date(commit.date),
+			hash: commit.hash,
+			refs: commit.refs,
+		}));
+	}
+
+	async getFileLatestCommits(path: string) {
+		// The cache will keep the latest tracked commit hash, which means it will be able
+		// to completely skip looking into older commits, considerably increasing performance.
+		const fromCommit = this.#cache[path] ? `${this.#cache[path]}^` : undefined;
+		const commits = fromCommit
+			? await this.getFileCommits(path, fromCommit).catch(() =>
+					// The cached commit might be the repository's root commit, or it might no longer
+					// exist locally after a history rewrite. In those cases, fall back to a full history.
+					this.getFileCommits(path),
+				)
+			: await this.getFileCommits(path);
+
+		const latestCommit = commits[0];
+
+		// Edge case: sometimes all the changes for a file (or the only one)
+		// have been purposefully ignored in Lunaria, therefore we need to
+		// define the latest change as the latest tracked change.
+		const latestTrackedCommit =
+			findLatestTrackedCommit(this.#config.tracking, path, commits) ?? latestCommit;
+
+		if (!latestCommit || !latestTrackedCommit) {
+			this.#logger.error(UncommittedFileFound.message(path));
+			process.exit(1);
+		}
+		if (!this.#force) this.#cache[path] = latestTrackedCommit.hash;
+
+		return { latestCommit, latestTrackedCommit };
 	}
 }
 
-export function getGitHostingLinks(repository: LunariaConfig['repository']) {
-	const { name, branch, hosting, rootDir } = repository;
+/**
+ * Finds the latest tracked commit in a list of commits, tracked means
+ * the latest commit that wasn't ignored from Lunaria's tracking system,
+ * either by the use of a tracker directive or the inclusion of a ignored
+ * keyword in the commit's name.
+ */
+export function findLatestTrackedCommit(
+	tracking: LunariaConfig['tracking'],
+	path: string,
+	commits: Commit[],
+) {
+	/** Regex that matches a `'@lunaria-track'` or `'@lunaria-ignore'` group
+	 * and a sequence of paths separated by semicolons till a line break.
+	 *
+	 * This means whenever a valid tracker directive is found, the tracking system
+	 * lets the user take over and cherry-pick which files' changes should be tracked
+	 * or ignored.
+	 */
+	const trackerDirectivesRe =
+		/(?<directive>@lunaria-track|@lunaria-ignore):(?<pathsOrGlobs>[^\n]+)?/;
 
-	switch (hosting) {
-		case 'github':
-			return {
-				create: (filePath: string) =>
-					`https://github.com/${name}/new/${branch}?filename=${join(rootDir, filePath)}`,
-				source: (filePath: string) =>
-					`https://github.com/${name}/blob/${branch}/${join(rootDir, filePath)}`,
-				history: (filePath: string, sinceDate?: string) =>
-					`https://github.com/${name}/commits/${branch}/${join(rootDir, filePath)}${
-						sinceDate ? `?since=${sinceDate}` : ''
-					}`,
-				clone: () => `https://github.com/${name}.git`,
-			};
+	/** Regex that matches any configured ignored keywords in the user's Lunaria config. */
+	const ignoredKeywordsRe =
+		tracking.ignoredKeywords.length > 0
+			? new RegExp(`(${tracking.ignoredKeywords.join('|')})`, 'i')
+			: undefined;
 
-		case 'gitlab':
-			return {
-				create: (filePath: string) =>
-					`https://gitlab.com/${name}/-/new/${branch}?file_name=${join(rootDir, filePath)}`,
-				source: (filePath: string) =>
-					`https://gitlab.com/${name}/-/blob/${branch}/${join(rootDir, filePath)}`,
-				history: (filePath: string, sinceDate?: string) =>
-					`https://gitlab.com/${name}/-/commits/${branch}/${join(rootDir, filePath)}${
-						sinceDate ? `?since=${sinceDate}` : ''
-					}`,
-				clone: () => `https://gitlab.com/${name}.git`,
-			};
-	}
+	return commits.find((commit) => {
+		// Ignored keywords take precedence over tracker directives.
+		if (ignoredKeywordsRe && commit.message.match(ignoredKeywordsRe)) return false;
+
+		const trackerDirectiveMatch: RegExpGroups<'directive' | 'pathsOrGlobs'> =
+			commit.body.match(trackerDirectivesRe);
+
+		// If no tracker directive is found, we consider the commit as tracked.
+		if (!trackerDirectiveMatch?.groups) return true;
+
+		const { directive, pathsOrGlobs } = trackerDirectiveMatch.groups;
+
+		const foundPath = pathsOrGlobs
+			.split(';')
+			// We filter here to avoid empty strings if an extra semicolon is added at the end.
+			.filter((val) => val.length > 0)
+			.find((pathOrGlob) => {
+				// We trim here since there might be added extra spaces by accident.
+				if (directive === '@lunaria-track') return picomatch.isMatch(path, pathOrGlob.trim());
+				if (directive === '@lunaria-ignore') return picomatch.isMatch(path, pathOrGlob.trim());
+				return false;
+			});
+
+		// If we find the path and it's a `track` directive, we consider the commit as the latest tracked.
+		// Otherwise, we consider the commit as ignored.
+		if (foundPath) return directive === '@lunaria-track';
+
+		// If we don't find the path (undefined), for a `track` directive, we consider the commit as ignored, and for `ignore` as tracked.
+		return directive === '@lunaria-ignore';
+	});
 }

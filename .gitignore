@@ -1,8 +1,15 @@
 # dependencies
-node_modules/
+**/node_modules/
 
 # build output
 dist/
+
+# generated directories/files
+.turbo/
+.astro/
+.next/
+.vitepress/
+*.tsbuildinfo
 
 # logs
 npm-debug.log*
@@ -19,3 +26,5 @@ pnpm-debug.log*
 
 # vitest
 __coverage__/
+# Local Netlify folder
+.netlify

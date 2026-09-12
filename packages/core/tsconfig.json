@@ -1,14 +1,11 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@total-typescript/tsconfig/tsc/no-dom/library-monorepo",
+  "include": ["src"],
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "moduleDetection": "force",
-    "target": "ES2022",
-    "lib": ["es2022"],
+    "rootDir": "src",
     "outDir": "dist",
-    "declaration": true,
-    "sourceMap": true,
-    "declarationMap": true
-  }
+    "erasableSyntaxOnly": true,
+    "rewriteRelativeImportExtensions": true
+  },
+  "references": [{ "path": "./tsconfig.test.json" }]
 }

@@ -1,0 +1,11 @@
+{
+  "include": ["tests"],
+  "references": [{ "path": "./tsconfig.json" }],
+  "compilerOptions": {
+    "composite": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true,
+    "types": ["@types/node"]
+  }
+}

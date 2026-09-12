@@ -1,5 +1,4 @@
 import starlight from '@astrojs/starlight';
-import lunaria from '@lunariajs/starlight';
 import { defineConfig } from 'astro/config';
 
 const locales = {
@@ -17,7 +16,7 @@ const locales = {
 export default defineConfig({
 	integrations: [
 		starlight({
-			plugins: [lunaria()],
+			plugins: [],
 			title: 'My Docs',
 			locales,
 			social: {

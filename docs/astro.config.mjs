@@ -1,7 +1,7 @@
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
-import starlightLinksValidator from 'starlight-links-validator';
 import starlightBlog from 'starlight-blog';
+import starlightLinksValidator from 'starlight-links-validator';
 
 const site = 'https://lunaria.dev/';
 
@@ -16,11 +16,15 @@ export default defineConfig({
 				dark: './src/assets/logo-dark.svg',
 				replacesTitle: true,
 			},
-			social: {
-				github: 'https://github.com/yanthomasdev/lunaria',
-			},
+			social: [
+				{
+					icon: 'github',
+					label: 'GitHub',
+					href: 'https://github.com/lunariajs/lunaria',
+				},
+			],
 			editLink: {
-				baseUrl: 'https://github.com/yanthomasdev/lunaria/edit/main/docs/',
+				baseUrl: 'https://github.com/lunariajs/lunaria/edit/main/docs/',
 			},
 			head: [
 				{

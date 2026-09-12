@@ -1,87 +1,65 @@
 {
   "name": "@lunariajs/core",
-  "type": "module",
   "version": "0.1.1",
   "description": "Localization management system for open-source projects",
-  "types": "./dist/index.d.mts",
-  "bin": {
-    "lunaria": "./dist/cli/index.mjs"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.mts",
-      "default": "./dist/index.mjs"
-    },
-    "./components": {
-      "types": "./dist/dashboard/components.d.mts",
-      "default": "./dist/dashboard/components.mjs"
-    },
-    "./dashboard": {
-      "types": "./dist/dashboard/index.d.mts",
-      "default": "./dist/dashboard/index.mjs"
-    },
-    "./git": {
-      "types": "./dist/status/git.d.mts",
-      "default": "./dist/status/git.mjs"
-    },
-    "./status": {
-      "types": "./dist/status/index.d.mts",
-      "default": "./dist/status/index.mjs"
-    },
-    "./config": {
-      "types": "./dist/config/index.d.mts",
-      "default": "./dist/config/index.mjs"
-    },
-    "./console": {
-      "types": "./dist/cli/console.d.mts",
-      "default": "./dist/cli/console.mjs"
-    },
-    "./cli": "./dist/cli/index.mjs"
-  },
-  "engines": {
-    "node": ">=18.17.0"
-  },
-  "files": [
-    "dist",
-    "config.schema.json"
-  ],
   "keywords": [
     "i18n",
     "l10n",
     "translation",
     "localization",
-    "dashboard",
     "management"
   ],
-  "author": "Yan Thomas",
-  "license": "MIT",
+  "bugs": "https://github.com/lunariajs/lunaria/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yanthomasdev/lunaria",
+    "url": "git+https://github.com/lunariajs/lunaria.git",
     "directory": "packages/core"
   },
-  "bugs": "https://github.com/yanthomasdev/lunaria/issues",
-  "scripts": {
-    "build": "unbuild && pnpm run schema",
-    "lint": "tsc",
-    "schema": "jiti ./scripts/schema.ts"
+  "license": "MIT",
+  "author": "Yan Thomas",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./config": {
+      "types": "./dist/config/index.d.ts",
+      "default": "./dist/config/index.js"
+    }
   },
-  "devDependencies": {
-    "@types/micromatch": "^4.0.3",
-    "@types/node": "^20.8.9",
-    "typescript": "^5.2.2",
-    "zod-to-json-schema": "^3.22.1"
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --test \"tests/**/*.test.ts\""
   },
   "dependencies": {
-    "@clack/core": "^0.3.3",
-    "fast-glob": "^3.3.1",
-    "get-port": "^7.0.0",
-    "jiti": "^1.21.0",
-    "micromatch": "^4.0.5",
-    "path-to-regexp": "^6.2.1",
-    "picocolors": "^1.0.0",
-    "simple-git": "^3.20.0",
+    "consola": "^3.4.1",
+    "gettext-parser": "^9.0.2",
+    "jiti": "2.3.3",
+    "js-yaml": "^4.1.0",
+    "neotraverse": "^0.6.18",
+    "p-all": "^5.0.0",
+    "path-to-regexp": "6.3.0",
+    "picomatch": "^4.0.2",
+    "simple-git": "^3.27.0",
+    "tinyglobby": "^0.2.10",
     "ultramatter": "^0.0.4",
-    "zod": "^3.22.4"
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/gettext-parser": "^9.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.10.6",
+    "@types/picomatch": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.17.0"
   }
 }

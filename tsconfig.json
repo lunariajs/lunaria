@@ -1,14 +1,2 @@
-{
-  "compilerOptions": {
-    "module": "ESNext",
-    "target": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "verbatimModuleSyntax": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "noUncheckedIndexedAccess": true,
-    "resolveJsonModule": true
-  }
-}
+// Blank tsconfig.json to avoid TypeScript from crawling the directory tree and causing hard to debug errors.
+{}
