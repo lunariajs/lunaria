@@ -114,7 +114,7 @@ export function findLatestTrackedCommit(
 			commit.body.match(trackerDirectivesRe);
 
 		// If no tracker directive is found, we consider the commit as tracked.
-		if (!trackerDirectiveMatch || !trackerDirectiveMatch.groups) return true;
+		if (!trackerDirectiveMatch?.groups) return true;
 
 		const { directive, pathsOrGlobs } = trackerDirectiveMatch.groups;
 
