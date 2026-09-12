@@ -124,6 +124,45 @@ describe('Tracking', () => {
 		assert.deepEqual(latestTrackedCommitFour, commits[0]);
 	});
 
+	it('should evaluate tracker directives when ignored keywords are empty', () => {
+		const tracking = {
+			ignoredKeywords: [],
+		};
+
+		const commits = [
+			{
+				author: {
+					name: 'John Doe',
+					email: 'john.doe@email.com',
+				},
+				hash: 'hash1',
+				date: new Date('2021-09-01'),
+				message: 'update docs',
+				body: '@lunaria-track:src/content/docs/en/other.mdx',
+				refs: '',
+			},
+			{
+				author: {
+					name: 'John Doe',
+					email: 'john.doe@email.com',
+				},
+				hash: 'hash2',
+				date: new Date('2021-08-01'),
+				message: 'previous docs update',
+				body: 'This is a test commit',
+				refs: '',
+			},
+		];
+
+		const latestTrackedCommit = findLatestTrackedCommit(
+			tracking,
+			'src/content/docs/en/test.mdx',
+			commits,
+		);
+
+		assert.deepEqual(latestTrackedCommit, commits[1]);
+	});
+
 	it('should correctly evaluate `@lunaria-ignore` directive', () => {
 		const tracking = {
 			ignoredKeywords: ['fix typo', 'lunaria-ignore'],

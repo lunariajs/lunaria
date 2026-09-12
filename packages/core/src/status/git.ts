@@ -101,11 +101,14 @@ export function findLatestTrackedCommit(
 		/(?<directive>@lunaria-track|@lunaria-ignore):(?<pathsOrGlobs>[^\n]+)?/;
 
 	/** Regex that matches any configured ignored keywords in the user's Lunaria config. */
-	const ignoredKeywordsRe = new RegExp(`(${tracking.ignoredKeywords.join('|')})`, 'i');
+	const ignoredKeywordsRe =
+		tracking.ignoredKeywords.length > 0
+			? new RegExp(`(${tracking.ignoredKeywords.join('|')})`, 'i')
+			: undefined;
 
 	return commits.find((commit) => {
 		// Ignored keywords take precedence over tracker directives.
-		if (commit.message.match(ignoredKeywordsRe)) return false;
+		if (ignoredKeywordsRe && commit.message.match(ignoredKeywordsRe)) return false;
 
 		const trackerDirectiveMatch: RegExpGroups<'directive' | 'pathsOrGlobs'> =
 			commit.body.match(trackerDirectivesRe);
