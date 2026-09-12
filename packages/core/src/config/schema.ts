@@ -14,7 +14,7 @@ const RepositorySchema = z.object({
 				'The root directory should not be a relative path, it should follow the example: `examples/vitepress`',
 		})
 		.transform((path) => stripTrailingSlash(path)),
-	hosting: z.union([z.literal('github'), z.literal('gitlab')]).default('github'),
+	hosting: z.enum(['github', 'gitlab']).default('github'),
 });
 
 const BaseFileSchema = z.object({
@@ -43,13 +43,13 @@ export const FileSchema = z.discriminatedUnion('type', [
 ]);
 
 export const SetupOptionsSchema = z.object({
-	config: z.any() as z.Schema<LunariaUserConfig>,
-	updateConfig: z.function(
-		z.tuple([z.record(z.any()) as z.Schema<Partial<LunariaUserConfig>>]),
-		z.void(),
-	),
+	config: z.any() as z.ZodType<LunariaUserConfig>,
+	updateConfig: z.function({
+		input: [z.record(z.string(), z.any()) as z.ZodType<Partial<LunariaUserConfig>>],
+		output: z.void(),
+	}),
 	// Importing ConsolaInstance from 'consola' directly is not possible due to missing imports for `LogFn`
-	logger: z.any() as z.Schema<
+	logger: z.any() as z.ZodType<
 		Consola &
 			Record<
 				LogType,
@@ -66,7 +66,7 @@ export const SetupOptionsSchema = z.object({
 const LunariaIntegrationSchema = z.object({
 	name: z.string(),
 	hooks: z.object({
-		setup: z.function(z.tuple([SetupOptionsSchema]), z.void()).optional(),
+		setup: z.function({ input: [SetupOptionsSchema], output: z.void() }).optional(),
 	}),
 });
 
@@ -88,7 +88,7 @@ export const BaseLunariaConfigSchema = z.object({
 			ignoredKeywords: z.array(z.string()).default(['lunaria-ignore', 'fix typo']),
 			localizableProperty: z.string().optional(),
 		})
-		.default({}),
+		.prefault({}),
 	external: z.boolean().default(false),
 	integrations: z.array(LunariaIntegrationSchema).default([]),
 	cacheDir: z.string().default('./node_modules/.cache/lunaria'),
@@ -101,7 +101,7 @@ export const LunariaConfigSchema = BaseLunariaConfigSchema.superRefine((config, 
 	for (const locale of [config.sourceLocale.lang, ...config.locales.map((locale) => locale.lang)]) {
 		if (locales.has(locale)) {
 			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
+				code: 'custom',
 				message: `Repeated \`locales\` value: \`"${locale}"\``,
 			});
 		}
@@ -117,14 +117,14 @@ export const LunariaConfigSchema = BaseLunariaConfigSchema.superRefine((config, 
 
 		if (!sourceParameterKeys && parameterKeys) {
 			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
+				code: 'custom',
 				message: 'All locales must have the same `parameters` keys',
 			});
 		}
 
 		if (sourceParameterKeys && !parameterKeys) {
 			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
+				code: 'custom',
 				message: `All locales must have the same \`parameters\` keys. Locale ${lang} does not have \`parameters\``,
 			});
 		}
@@ -136,7 +136,7 @@ export const LunariaConfigSchema = BaseLunariaConfigSchema.superRefine((config, 
 				!sourceParameterKeys.every((parameter, index) => parameter === parameterKeys[index]))
 		) {
 			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
+				code: 'custom',
 				message: 'All locales must have the same `parameters` keys',
 			});
 		}
@@ -144,7 +144,7 @@ export const LunariaConfigSchema = BaseLunariaConfigSchema.superRefine((config, 
 
 	if (config.cacheDir === config.cloneDir) {
 		ctx.addIssue({
-			code: z.ZodIssueCode.custom,
+			code: 'custom',
 			message: '`cacheDir` and `cloneDir` should not be in the same directory',
 		});
 	}
@@ -155,20 +155,20 @@ export const LunariaConfigSchema = BaseLunariaConfigSchema.superRefine((config, 
 		for (const [targetLang, baseLangs] of Object.entries(file.merge)) {
 			if (!locales.has(targetLang)) {
 				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
+					code: 'custom',
 					message: `\`merge\` key \`"${targetLang}"\` is not a configured locale lang`,
 				});
 			}
 			for (const baseLang of baseLangs) {
 				if (!locales.has(baseLang)) {
 					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
+						code: 'custom',
 						message: `\`merge\` base lang \`"${baseLang}"\` for target \`"${targetLang}"\` is not a configured locale lang`,
 					});
 				}
 				if (baseLang === targetLang) {
 					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
+						code: 'custom',
 						message: `\`merge\` base lang \`"${baseLang}"\` cannot be the same as its target lang`,
 					});
 				}

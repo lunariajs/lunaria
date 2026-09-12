@@ -67,15 +67,15 @@ export default defineConfig({
 				},
 				{
 					label: 'Guides',
-					autogenerate: { directory: 'guides' },
+					items: [{ autogenerate: { directory: 'guides' } }],
 				},
 				{
 					label: 'Integrations',
-					autogenerate: { directory: 'integrations' },
+					items: [{ autogenerate: { directory: 'integrations' } }],
 				},
 				{
 					label: 'Reference',
-					autogenerate: { directory: 'reference' },
+					items: [{ autogenerate: { directory: 'reference' } }],
 				},
 			],
 			customCss: ['./src/styles/theme.css', './src/styles/landing.css'],

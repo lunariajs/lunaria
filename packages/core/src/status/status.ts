@@ -1,8 +1,8 @@
 import { resolve } from 'node:path';
 import { po } from 'gettext-parser';
 import { createJiti } from 'jiti';
-import yaml from 'js-yaml';
-import { Traverse } from 'neotraverse/modern';
+import * as traverse from 'neotraverse';
+import { parse as parseYaml } from 'yaml';
 import type { OptionalKeys } from '../config/types.ts';
 import { InvalidDictionaryStructure, UnsupportedDictionaryFileFormat } from '../errors/errors.ts';
 import { DictionarySchema } from './schema.ts';
@@ -100,32 +100,30 @@ export function findMissingKeys(
 	sourceDict: Dictionary,
 	localeDict: Dictionary,
 ) {
-	// In case there's no optional keys, we make it so that the traverse object is empty instead of undefined.
-	const optionalKeysTraverse = new Traverse(optionalKeys ?? {});
-	const sourceDictTraverse = new Traverse(sourceDict);
-	const localeDictTraverse = new Traverse(localeDict);
+	// In case there's no optional keys, we make it so that the traversed object is empty instead of undefined.
+	const optionalKeysDict = optionalKeys ?? {};
 
 	const hasOptionalParent = (path: KeyPath) => {
 		// is upmost parent
-		if (path.length === 1) return optionalKeysTraverse.get(path) === true;
+		if (path.length === 1) return traverse.get(optionalKeysDict, path) === true;
 
 		// not upmost parent
-		if (optionalKeysTraverse.get(path) === true) return true;
+		if (traverse.get(optionalKeysDict, path) === true) return true;
 
 		// check if parent of parent is optional
 		return hasOptionalParent([...path].slice(0, -1));
 	};
 
-	const missingKeys = (sourceDictTraverse.paths() as KeyPath[])
+	const missingKeys = (traverse.paths(sourceDict) as KeyPath[])
 		.map((path) => {
 			// Ignore non-leafs
-			if (typeof sourceDictTraverse.get(path) === 'object') return undefined;
+			if (typeof traverse.get(sourceDict, path) === 'object') return undefined;
 			// Key is missing
-			if (!localeDictTraverse.has(path)) {
+			if (!traverse.has(localeDict, path)) {
 				// but parent is optional
 				if (path.length > 1 && hasOptionalParent(path)) return undefined;
 				// but leaf is optional
-				if (optionalKeysTraverse.get(path) === true) return undefined;
+				if (traverse.get(optionalKeysDict, path) === true) return undefined;
 				// and is NOT optional
 				return path;
 			}
@@ -148,7 +146,7 @@ export async function loadDictionary(path: string, contents: string) {
 
 	/** Regex to match YAML files. */
 	if (/\.(yml|yaml)$/.test(path)) {
-		return yaml.load(contents);
+		return parseYaml(contents);
 	}
 
 	/** Regex to match JSON files. */

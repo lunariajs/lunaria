@@ -26,12 +26,12 @@ export function stringFromFormat(format: string, placeholders: Record<string, st
 	return formatResult;
 }
 
-export function parseWithFriendlyErrors<T extends z.Schema>(
+export function parseWithFriendlyErrors<T extends z.ZodType>(
 	schema: T,
 	input: z.input<T>,
 	message: (issues: string) => string,
 ): z.output<T> {
-	const parsedConfig = schema.safeParse(input, { errorMap });
+	const parsedConfig = schema.safeParse(input, { error: errorMap, reportInput: true });
 
 	if (!parsedConfig.success) {
 		const issues = parsedConfig.error.issues.map((i) => `- ${i.message}`).join('\n');

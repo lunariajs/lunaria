@@ -12,12 +12,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",
-    "@changesets/changelog-github": "^0.5.0",
-    "@changesets/cli": "^2.27.11",
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.2",
     "@total-typescript/tsconfig": "^1.0.4",
-    "pkg-pr-new": "^0.0.20",
-    "turbo": "^2.3.3",
-    "typescript": "^5.8.2"
+    "pkg-pr-new": "^0.0.88",
+    "turbo": "^2.10.12",
+    "typescript": "^7.0.2"
   },
   "engines": {
     "node": ">=22.18.0",

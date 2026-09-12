@@ -2,3 +2,7 @@ packages:
   - 'packages/**/*'
   - 'examples/**/*'
   - 'docs'
+
+# Temporary override while starlight-blog isn't updated to the latest Satteri version
+overrides:
+  'starlight-blog>satteri': ^0.10.5
