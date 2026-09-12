@@ -200,4 +200,42 @@ describe('Tracking', () => {
 			assert.equal(status.source.git.latestTrackedCommit.hash, trackedHash);
 		});
 	});
+
+	it('should invalidate cached tracking data when tracking config changes', async () => {
+		await withTestRepo(async (repo) => {
+			repo.writeFileTree({
+				src: {
+					content: {
+						en: { 'cache-config.mdx': '# Cache config\n' },
+						es: { 'cache-config.mdx': '# Cache config ES\n' },
+					},
+				},
+			});
+			repo.commitAllChanges('add cache config doc', '2024-01-01');
+
+			repo.writeFile('src/content/en/cache-config.mdx', '# Cache config\n\nUpdated.\n');
+			const latestHash = repo.commitAllChanges('skip-l10n cache config update', '2024-02-01');
+
+			const firstLunaria = await createLunaria({
+				config: {
+					...sampleValidConfig,
+					tracking: { ignoredKeywords: ['skip-l10n'] },
+				},
+				logLevel: 'silent',
+			});
+			await firstLunaria.getFileStatus('src/content/en/cache-config.mdx');
+
+			const secondLunaria = await createLunaria({
+				config: {
+					...sampleValidConfig,
+					tracking: { ignoredKeywords: ['unrelated-keyword'] },
+				},
+				logLevel: 'silent',
+			});
+			const status = await secondLunaria.getFileStatus('src/content/en/cache-config.mdx');
+			assert.ok(status);
+
+			assert.equal(status.source.git.latestTrackedCommit.hash, latestHash);
+		});
+	});
 });

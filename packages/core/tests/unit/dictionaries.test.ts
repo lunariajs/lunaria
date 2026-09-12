@@ -3,7 +3,12 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { findMissingKeys, loadDictionary, mergeBaseDictionaries } from '../../src/status/status.ts';
+import {
+	findMissingKeys,
+	getMissingDictionaryKeys,
+	loadDictionary,
+	mergeBaseDictionaries,
+} from '../../src/status/status.ts';
 
 describe('findMissingKeys', () => {
 	it('should return all missing keys when no optional keys are set', () => {
@@ -272,6 +277,48 @@ describe('loadDictionary', () => {
 
 		const missing = findMissingKeys(undefined, sourceDict, localeDict);
 		assert.deepEqual(missing, [['Untranslated'], ['Maybe']]);
+	});
+
+	it('should throw for unsupported dictionary formats', async () => {
+		await assert.rejects(() => loadTempDictionary('dictionary.txt', 'hello=Hello'), {
+			message: /unsupported file format/,
+		});
+	});
+});
+
+describe('getMissingDictionaryKeys', () => {
+	it('should throw for invalid source dictionaries', async () => {
+		await assert.rejects(
+			() =>
+				getMissingDictionaryKeys(
+					{ fsPath: 'source.json', contents: JSON.stringify({ hello: 1 }) },
+					{ fsPath: 'locale.json', contents: JSON.stringify({ hello: 'Hola' }) },
+				),
+			{ message: /source\.json.*invalid structure/ },
+		);
+	});
+
+	it('should throw for invalid locale dictionaries', async () => {
+		await assert.rejects(
+			() =>
+				getMissingDictionaryKeys(
+					{ fsPath: 'source.json', contents: JSON.stringify({ hello: 'Hello' }) },
+					{ fsPath: 'locale.json', contents: JSON.stringify({ hello: false }) },
+				),
+			{ message: /locale\.json.*invalid structure/ },
+		);
+	});
+
+	it('should throw for invalid base dictionaries', async () => {
+		await assert.rejects(
+			() =>
+				getMissingDictionaryKeys(
+					{ fsPath: 'source.json', contents: JSON.stringify({ hello: 'Hello' }) },
+					{ fsPath: 'locale.json', contents: JSON.stringify({}) },
+					[{ fsPath: 'base.json', contents: JSON.stringify({ hello: null }) }],
+				),
+			{ message: /base\.json.*invalid structure/ },
+		);
 	});
 });
 

@@ -52,6 +52,12 @@ describe('Configuration validation', () => {
 				repository: { name: 'yanthomasdev/lunaria', rootDir: './examples/starlight/' },
 			}),
 		);
+		assert.throws(() =>
+			validateFinalConfig({
+				...sampleValidConfig,
+				repository: { name: 'yanthomasdev/lunaria', rootDir: '../examples/starlight/' },
+			}),
+		);
 	});
 
 	it('should remove trailing slashes from repository properties', () => {
@@ -107,6 +113,63 @@ describe('Configuration validation', () => {
 						},
 					},
 				],
+			}),
+		);
+	});
+
+	it('should accept locale parameters with matching keys in different order', () => {
+		assert.doesNotThrow(() =>
+			validateFinalConfig({
+				...sampleValidConfig,
+				sourceLocale: {
+					lang: 'en',
+					label: 'English',
+					parameters: {
+						language: 'en',
+						region: 'US',
+					},
+				},
+				locales: [
+					{
+						label: 'Spanish',
+						lang: 'es',
+						parameters: {
+							region: 'ES',
+							language: 'es',
+						},
+					},
+				],
+			}),
+		);
+	});
+
+	it('should throw when a locale omits configured parameters', () => {
+		assert.throws(() =>
+			validateFinalConfig({
+				...sampleValidConfig,
+				sourceLocale: {
+					lang: 'en',
+					label: 'English',
+					parameters: {
+						tag: 'en',
+					},
+				},
+				locales: [
+					{
+						label: 'Spanish',
+						lang: 'es',
+					},
+				],
+			}),
+		);
+	});
+
+	it('should throw when cacheDir and cloneDir are the same', () => {
+		assert.throws(() =>
+			validateFinalConfig({
+				...sampleValidConfig,
+				cacheDir: './node_modules/.cache/lunaria',
+				cloneDir: './node_modules/.cache/lunaria',
 			}),
 		);
 	});
