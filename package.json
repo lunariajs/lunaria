@@ -8,7 +8,8 @@
     "build:core": "pnpm turbo build --filter=@lunariajs/core",
     "dev": "pnpm turbo dev --filter=lunaria-docs",
     "test": "pnpm turbo test",
-    "docs": "pnpm --filter lunaria-docs dev"
+    "docs": "pnpm --filter lunaria-docs dev",
+    "version": "pnpm changeset version && pnpm i --no-frozen-lockfile"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",
