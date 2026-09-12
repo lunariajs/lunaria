@@ -112,31 +112,35 @@ export function createPathResolver(
 		isSourcePath: (path: string) => !!match(sourcePattern)(path) && !match(localesPattern)(path),
 		isLocalesPath: (path: string) => !!match(localesPattern)(path),
 		toPath: (fromPath: string, toLang: string) => {
+			const sourceMatch = match(sourcePattern)(fromPath) as
+				| MatchResult<{ lang?: string; path: string }>
+				| false;
+			const localeMatch = match(localesPattern)(fromPath) as
+				| MatchResult<{ lang?: string; path: string }>
+				| false;
+			const fromMatch = localeMatch || sourceMatch;
+
+			if (!fromMatch) {
+				throw new Error(InvalidFilesPattern.message(fromPath));
+			}
+
 			// Since the path for the same source and localized content can have different patterns,
 			// we have to check if the `toLang` is from the sourceLocale (i.e. source content) or
 			// from the localized content, meaning we get the correct path always.
 			const selectedPattern = locales.map((locale) => locale.lang).includes(toLang)
 				? localesPattern
 				: sourcePattern;
-			const inverseSelectedPattern =
-				selectedPattern === sourcePattern ? localesPattern : sourcePattern;
 
 			// We inject the custom parameters as-is for the target locale.
 			const localeParameters = [sourceLocale, ...locales].find(
 				(locale) => locale.lang === toLang,
 			)?.parameters;
 
-			// TODO: Explore edge case where the fromPath is from the same locale as `toLang`,
-			// which causes an unexpected issue that makes it select the incorrect pattern.
-			const matcher = match(inverseSelectedPattern) as (
-				path: string,
-			) => MatchResult<{ lang?: string; path: string }>;
-
 			return compile<{ lang?: string; path: string }>(selectedPattern)({
 				// We extract and inject any parameters that could be found
 				// from the initial path to the resulting path, this is what
 				// enables the path inferring.
-				...matcher(fromPath).params,
+				...fromMatch.params,
 				// Locale parameters are injected as-is from the locale's `parameters` field,
 				// if the pattern needs any of those parameters, it will have the values needed.
 				...localeParameters,

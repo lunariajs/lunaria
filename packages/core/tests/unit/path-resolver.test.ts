@@ -55,6 +55,10 @@ describe('Path resolver', () => {
 			toPath('src/content/docs/es/guides/example.md', 'en'),
 			'src/content/docs/en/guides/example.md',
 		);
+		assert.equal(
+			toPath('src/content/docs/es/guides/example.md', 'es'),
+			'src/content/docs/es/guides/example.md',
+		);
 	});
 
 	it('should make valid paths from double-string pattern', () => {
@@ -71,6 +75,10 @@ describe('Path resolver', () => {
 		assert.equal(toPath('docs/test.mdx', 'es'), 'translations/es/test.mdx');
 		assert.equal(toPath('docs/examples/theory.mdx', 'pt'), 'translations/pt/examples/theory.mdx');
 		assert.equal(toPath('translations/pt/recipes/cooking.mdx', 'en'), 'docs/recipes/cooking.mdx');
+		assert.equal(
+			toPath('translations/pt/recipes/cooking.mdx', 'pt'),
+			'translations/pt/recipes/cooking.mdx',
+		);
 	});
 
 	it('should correctly match source and locale paths from single-string pattern', () => {
