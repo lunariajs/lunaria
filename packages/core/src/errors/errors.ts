@@ -69,13 +69,6 @@ export const AssetNotFound = {
 		`Could not find the asset file at \`${path}\`. Verify the paths in your \`dashboard\` configuration point to existing files.`,
 } satisfies ErrorContext;
 
-export const StatusNotFound = {
-	name: 'StatusNotFound',
-	title: 'Status file not found.',
-	message: (path: string) =>
-		`Could not find a previously built status at \`${path}\`. Run \`lunaria build\` without \`--skip-status\` to build a new one.`,
-} satisfies ErrorContext;
-
 export const DashboardNotFound = {
 	name: 'DashboardNotFound',
 	title: 'Dashboard build not found.',

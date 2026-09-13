@@ -11,10 +11,6 @@ const cli: CLI = {
 			usage: '[...options]',
 			options: [
 				{
-					name: '--skip-status',
-					description: 'Skip the status build and use the one from disk instead.',
-				},
-				{
 					name: '--force',
 					description: 'Ignore the cached git data and build the status from scratch.',
 				},
@@ -33,17 +29,6 @@ const cli: CLI = {
 				{
 					name: '--port <number>',
 					description: 'Specify which port to open the preview server on.',
-				},
-			],
-		},
-		{
-			name: 'stdout',
-			description: 'Log your config and status in the console.',
-			usage: '[...options]',
-			options: [
-				{
-					name: '--force',
-					description: 'Ignore the cached git data and build the status from scratch.',
 				},
 			],
 		},
@@ -89,11 +74,6 @@ async function main() {
 			case 'preview': {
 				const { preview } = await import('./preview/index.ts');
 				await preview(options);
-				break;
-			}
-			case 'stdout': {
-				const { stdout } = await import('./stdout/index.ts');
-				await stdout(options);
 				break;
 			}
 			default:

@@ -41,11 +41,6 @@ describe('CLI', () => {
 			const dashboard = readFileSync(dashboardPath, 'utf8');
 			assert.ok(dashboard.includes('<title>Test Dashboard</title>'));
 			assert.ok(dashboard.includes('1 done, 0 outdated, 1 missing'));
-
-			// Skipping the status build reuses the status written to disk.
-			const skipped = runCli(repo.getRepoPath(), ['build', '--skip-status']);
-			assert.equal(skipped.status, 0, skipped.stderr + skipped.stdout);
-			assert.ok(readFileSync(dashboardPath, 'utf8').includes('<title>Test Dashboard</title>'));
 		});
 	});
 
@@ -82,24 +77,36 @@ describe('CLI', () => {
 		});
 	});
 
-	it('should log the configuration and status to stdout', async () => {
+	it('should pass the status to renderer components', async () => {
 		await withTestRepo(async (repo) => {
 			repo.writeFileTree({
-				'lunaria.config.mjs': createConfigFile({
-					...sampleValidConfig,
-					dashboard: { title: 'Test Dashboard' },
-				}),
+				// Renderer components are functions, so this configuration is written as a module by hand.
+				'lunaria.config.mjs': `export default {
+	...${JSON.stringify(sampleValidConfig)},
+	renderer: {
+		overrides: {
+			statusByFile: (_, status) =>
+				'<ul>' +
+				status
+					.map((entry) => '<li>' + entry.source.git.latestCommit.date.toISOString() + '</li>')
+					.join('') +
+				'</ul>',
+		},
+	},
+};
+`,
 				src: { content: { en: { 'guide.mdx': '# Guide\n' }, es: { 'guide.mdx': '# Guía\n' } } },
 			});
 			repo.commitAllChanges('add docs', '2024-01-01');
 
-			const result = runCli(repo.getRepoPath(), ['stdout', '--force']);
+			const result = runCli(repo.getRepoPath(), ['build', '--force']);
 			assert.equal(result.status, 0, result.stderr + result.stdout);
 
-			const [config, status] = JSON.parse(result.stdout);
-			assert.equal(config.dashboard.title, 'Test Dashboard');
-			assert.equal(config.outDir, './dist/lunaria');
-			assert.equal(status[0].localizations[0].status, 'up-to-date');
+			const dashboard = readFileSync(
+				repo.getFilePath(join('dist', 'lunaria', 'index.html')),
+				'utf8',
+			);
+			assert.ok(dashboard.includes('<li>2024-01-01T00:00:00.000Z</li>'));
 		});
 	});
 
@@ -107,12 +114,12 @@ describe('CLI', () => {
 		await withTestRepo(async (repo) => {
 			const result = runCli(repo.getRepoPath(), ['--help']);
 			assert.equal(result.status, 0);
-			for (const command of ['build', 'init', 'preview', 'stdout']) {
+			for (const command of ['build', 'init', 'preview']) {
 				assert.ok(result.stdout.includes(command));
 			}
 
 			const commandHelp = runCli(repo.getRepoPath(), ['build', '--help']);
-			assert.ok(commandHelp.stdout.includes('--skip-status'));
+			assert.ok(commandHelp.stdout.includes('--force'));
 		});
 	});
 });

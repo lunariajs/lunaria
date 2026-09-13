@@ -1,4 +1,6 @@
 import { strict as assert } from 'node:assert';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { pathToFileURL } from 'node:url';
 import { consola } from 'consola';
@@ -37,7 +39,7 @@ describe('Shallow repositories', () => {
 			const git = new LunariaGitInstance(validateFinalConfig(sampleValidConfig), consola, {});
 			assert.equal(await git.isShallowRepository(), true);
 
-			const shallowRun = runCli(clonePath, ['stdout', '--force']);
+			const shallowRun = runCli(clonePath, ['build', '--force']);
 			assert.notEqual(shallowRun.status, 0);
 			assert.ok(shallowRun.stderr.includes('shallow clone'), shallowRun.stderr);
 			assert.ok(shallowRun.stderr.includes('fetch-depth: 0'), shallowRun.stderr);
@@ -45,12 +47,14 @@ describe('Shallow repositories', () => {
 			await git.simpleGit.fetch(['--quiet', '--unshallow']);
 			assert.equal(await git.isShallowRepository(), false);
 
-			const fullRun = runCli(clonePath, ['stdout', '--force']);
+			const fullRun = runCli(clonePath, ['build', '--force']);
 			assert.equal(fullRun.status, 0, fullRun.stderr + fullRun.stdout);
 
-			const [, status] = JSON.parse(fullRun.stdout);
-			assert.equal(status[0].source.git.latestCommit.message, 'update guide');
-			assert.equal(status[0].localizations[0].status, 'outdated');
+			const [entry] = JSON.parse(
+				readFileSync(join(clonePath, 'dist', 'lunaria', 'status.json'), 'utf8'),
+			);
+			assert.equal(entry.source.git.latestCommit.message, 'update guide');
+			assert.equal(entry.localizations[0].status, 'outdated');
 		});
 	});
 });

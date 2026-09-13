@@ -12,7 +12,6 @@ export type GlobalOptions = {
 };
 
 export type BuildOptions = GlobalOptions & {
-	'skip-status'?: boolean | undefined;
 	force?: boolean | undefined;
 };
 
@@ -20,10 +19,6 @@ export type InitOptions = GlobalOptions;
 
 export type PreviewOptions = GlobalOptions & {
 	port?: string | undefined;
-};
-
-export type StdoutOptions = GlobalOptions & {
-	force?: boolean | undefined;
 };
 
 export type PackageJson = {

@@ -120,8 +120,12 @@ export const DashboardSchema = z
 	})
 	.prefault({});
 
-const BaseComponentSchema = z.custom<BaseComponent>((value: unknown) => typeof value === 'function').optional();
-const StatusComponentSchema = z.custom<StatusComponent>((value: unknown) => typeof value === 'function').optional();
+const BaseComponentSchema = z
+	.custom<BaseComponent>((value: unknown) => typeof value === 'function')
+	.optional();
+const StatusComponentSchema = z
+	.custom<StatusComponent>((value: unknown) => typeof value === 'function')
+	.optional();
 
 export const RendererConfigSchema = z
 	.object({

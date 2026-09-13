@@ -1,7 +1,6 @@
 import { parseArgs } from 'node:util';
 import { loadConfig } from '../config/config.ts';
 import { createLunaria } from '../index.ts';
-import type { LunariaOpts } from '../types.ts';
 import type { GlobalOptions } from './types.ts';
 
 /** The configuration file created by `lunaria init` when no `--config` path is specified. */
@@ -18,10 +17,6 @@ export function parseCommand() {
 				type: 'string',
 			},
 			/** Build command */
-			'skip-status': {
-				type: 'boolean',
-			},
-			/** Build and stdout commands */
 			force: {
 				type: 'boolean',
 			},
@@ -49,9 +44,8 @@ export function getFormattedTime(start: number, end: number) {
  */
 export async function createLunariaFromOptions(
 	options: GlobalOptions & { force?: boolean | undefined },
-	logLevel?: LunariaOpts['logLevel'],
 ) {
 	const config = options.config ? await loadConfig(options.config) : undefined;
 
-	return createLunaria({ config, force: options.force, logLevel });
+	return createLunaria({ config, force: options.force });
 }
