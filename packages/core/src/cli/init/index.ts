@@ -1,6 +1,7 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import type { ConsolaInstance } from 'consola';
+import { findConfigPath, isDefaultConfigPath } from '../../config/config.ts';
 import type { GitHostingOptions } from '../../config/types.ts';
 import { isRelative } from '../../utils/utils.ts';
 import { bold, createCommandLogger, exitOnCancel, highlight } from '../console.ts';
@@ -12,17 +13,28 @@ export async function init(options: InitOptions) {
 	const configPath = resolve(options.config ?? DEFAULT_CONFIG_PATH);
 	const packageJsonPath = resolve('./package.json');
 
-	if (existsSync(configPath)) {
+	// The new file replaces the one at its path or, when it is one of the files found automatically,
+	// any other `lunaria.config.*` file, which would otherwise be loaded instead of the new one.
+	const existingConfigPath = existsSync(configPath)
+		? configPath
+		: isDefaultConfigPath(configPath)
+			? await findConfigPath()
+			: undefined;
+
+	if (existingConfigPath) {
 		const overwrite = exitOnCancel(
-			await logger.prompt(`A file already exists at ${highlight(configPath)}. Overwrite it?`, {
-				type: 'confirm',
-				initial: false,
-				cancel: 'undefined',
-			}),
+			await logger.prompt(
+				`A configuration file already exists at ${highlight(existingConfigPath)}. Overwrite it?`,
+				{
+					type: 'confirm',
+					initial: false,
+					cancel: 'undefined',
+				},
+			),
 		);
 
 		if (!overwrite) {
-			logger.info('Keeping the existing file, no changes were made.');
+			logger.info('Keeping the existing configuration, no changes were made.');
 			return;
 		}
 	}
@@ -69,7 +81,15 @@ export async function init(options: InitOptions) {
 			})
 		: undefined;
 
+	mkdirSync(dirname(configPath), { recursive: true });
 	writeFileSync(configPath, createConfigFile({ hosting, name, branch, rootDir }));
+
+	// The first `lunaria.config.*` file found is the one loaded, so a previous configuration with
+	// another extension is removed to ensure the new one is used.
+	if (existingConfigPath && existingConfigPath !== configPath) {
+		rmSync(existingConfigPath);
+		logger.info(`Removed the previous configuration at ${highlight(existingConfigPath)}.`);
+	}
 
 	if (existsSync(packageJsonPath)) {
 		try {

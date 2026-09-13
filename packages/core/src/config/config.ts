@@ -24,7 +24,7 @@ const configPaths = Object.freeze([
  * Finds the first `lunaria.config.*` file in the current working directory and returns its path.
  * When a custom path is specified, it is used instead as long as the file exists.
  */
-async function findConfig(customPath?: string) {
+export async function findConfigPath(customPath?: string) {
 	for (const path of customPath ? [customPath] : configPaths) {
 		const resolvedPath = resolve(path);
 		if (await exists(resolvedPath)) {
@@ -32,7 +32,12 @@ async function findConfig(customPath?: string) {
 		}
 	}
 
-	return new Error(customPath ? ConfigNotFound.message(customPath) : ConfigNotFound.message());
+	return undefined;
+}
+
+/** Checks if a path is one of the `lunaria.config.*` files found automatically in the current working directory. */
+export function isDefaultConfigPath(path: string) {
+	return configPaths.some((configPath) => resolve(configPath) === resolve(path));
 }
 
 /**
@@ -40,9 +45,9 @@ async function findConfig(customPath?: string) {
  * or from the specified path.
  */
 export async function loadConfig(customPath?: string) {
-	const path = await findConfig(customPath);
-	if (path instanceof Error) {
-		throw path;
+	const path = await findConfigPath(customPath);
+	if (!path) {
+		throw new Error(customPath ? ConfigNotFound.message(customPath) : ConfigNotFound.message());
 	}
 
 	const jiti = createJiti(import.meta.url);
