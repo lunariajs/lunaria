@@ -28,7 +28,7 @@ export async function init(options: InitOptions) {
 				{
 					type: 'confirm',
 					initial: false,
-					cancel: 'undefined',
+					cancel: 'symbol',
 				},
 			),
 		);
@@ -46,7 +46,7 @@ export async function init(options: InitOptions) {
 				{ label: 'GitHub', value: 'github' },
 				{ label: 'GitLab', value: 'gitlab' },
 			],
-			cancel: 'undefined',
+			cancel: 'symbol',
 		}),
 	) as GitHostingOptions;
 
@@ -65,7 +65,7 @@ export async function init(options: InitOptions) {
 		await logger.prompt("Are you setting Lunaria on a monorepo's project?", {
 			type: 'confirm',
 			initial: false,
-			cancel: 'undefined',
+			cancel: 'symbol',
 		}),
 	);
 
@@ -127,14 +127,15 @@ async function promptRequiredText(
 	},
 ) {
 	while (true) {
-		const value = exitOnCancel(
+		const answer: string | undefined = exitOnCancel(
 			await logger.prompt(message, {
 				type: 'text',
 				placeholder: options.placeholder,
 				default: options.defaultValue,
-				cancel: 'undefined',
+				cancel: 'symbol',
 			}),
-		).trim();
+		);
+		const value = (answer ?? '').trim();
 
 		const error = options.validate(value);
 		if (!error) return value;

@@ -33,11 +33,11 @@ export function failure(message: string) {
 }
 
 /** Exits the process when a prompt was cancelled (e.g. by pressing Ctrl+C), otherwise returns its value. */
-export function exitOnCancel<T>(value: T | undefined): T {
-	if (value === undefined) {
+export function exitOnCancel<T>(value: T): Exclude<T, symbol> {
+	if (value === Symbol.for('cancel')) {
 		logger.log(failure('Operation cancelled.'));
 		process.exit(0);
 	}
 
-	return value;
+	return value as Exclude<T, symbol>;
 }
