@@ -64,7 +64,7 @@ export const Favicon = (dashboard: Dashboard): string => {
 	const { favicon } = dashboard;
 
 	const svg = favicon?.inline ? readAsset(favicon.inline) : '';
-	const inlineSvg = `data:image/svg+xml;utf8,${svg}`;
+	const inlineSvg = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 
 	const ExternalFavicon = favicon?.external
 		? html`${favicon.external.map(
