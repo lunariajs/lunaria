@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { DashboardSchema, RendererConfigSchema } from '../dashboard/schema.ts';
 import type { LunariaIntegration } from '../integrations/types.ts';
 import { isRelative, stripTrailingSlash } from '../utils/utils.ts';
-import type { OptionalKeys } from './types.ts';
+import type { File, Locale, OptionalKeys } from './types.ts';
 
 const RepositorySchema = z.object({
 	name: z.string().transform((path) => stripTrailingSlash(path)),
@@ -19,7 +19,10 @@ const RepositorySchema = z.object({
 });
 
 const BaseFileSchema = z.object({
-	include: z.tuple([z.string()], z.string()),
+	include: z
+		.array(z.string())
+		.nonempty()
+		.transform((items) => items as [string, ...string[]]),
 	exclude: z.array(z.string()).default(['node_modules']),
 	pattern: z.union([
 		z.string(),
@@ -38,7 +41,15 @@ export const FileSchema = z.discriminatedUnion('type', [
 	BaseFileSchema.extend({ type: z.literal('universal') }),
 	BaseFileSchema.extend({
 		type: z.literal('dictionary'),
-		merge: z.record(z.string(), z.tuple([z.string()], z.string())).optional(),
+		merge: z
+			.record(
+				z.string(),
+				z
+					.array(z.string())
+					.nonempty()
+					.transform((items) => items as [string, ...string[]]),
+			)
+			.optional(),
 		optionalKeys: OptionalKeysSchema.optional(),
 	}),
 ]);
@@ -65,8 +76,14 @@ export const LocaleSchema = z.object({
 export const BaseLunariaConfigSchema = z.object({
 	repository: RepositorySchema,
 	sourceLocale: LocaleSchema,
-	locales: z.tuple([LocaleSchema], LocaleSchema),
-	files: z.tuple([FileSchema], FileSchema),
+	locales: z
+		.array(LocaleSchema)
+		.nonempty()
+		.transform((items) => items as [Locale, ...Locale[]]),
+	files: z
+		.array(FileSchema)
+		.nonempty()
+		.transform((items) => items as [File, ...File[]]),
 	tracking: z
 		.object({
 			ignoredKeywords: z.array(z.string()).default(['lunaria-ignore', 'fix typo']),
