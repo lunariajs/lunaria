@@ -122,4 +122,17 @@ describe('CLI', () => {
 			assert.ok(commandHelp.stdout.includes('--force'));
 		});
 	});
+	it('should fail on unknown commands and options', async () => {
+		await withTestRepo(async (repo) => {
+			const unknownCommand = runCli(repo.getRepoPath(), ['bulid']);
+			assert.equal(unknownCommand.status, 1);
+			assert.match(unknownCommand.stderr, /Unknown command.*bulid/);
+			assert.ok(unknownCommand.stdout.includes('Commands'), unknownCommand.stdout);
+
+			const unknownOption = runCli(repo.getRepoPath(), ['build', '--skip-stauts']);
+			assert.equal(unknownOption.status, 1);
+			assert.ok(unknownOption.stderr.includes('--skip-stauts'), unknownOption.stderr);
+			assert.ok(unknownOption.stdout.includes('lunaria build'), unknownOption.stdout);
+		});
+	});
 });

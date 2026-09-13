@@ -55,7 +55,19 @@ async function main() {
 	try {
 		const { name, options } = parseCommand();
 
-		if (name && options.help) {
+		if (!name) {
+			await showHelp();
+			return;
+		}
+
+		if (!cli.commands.some((existingCommand) => existingCommand.name === name)) {
+			logger.error(`Unknown command \`${name}\`.`);
+			await showHelp();
+			process.exitCode = 1;
+			return;
+		}
+
+		if (options.help) {
 			await showHelp(name);
 			return;
 		}
@@ -76,17 +88,17 @@ async function main() {
 				await preview(options);
 				break;
 			}
-			default:
-				await showHelp();
-				break;
 		}
 	} catch (e) {
-		/** Filter out parseArgs errors (invalid/unknown option) and instead show help */
-		if (e instanceof TypeError && e?.stack?.includes('ERR_PARSE_ARGS')) await showHelp();
-		else throw e;
+		if (!(e instanceof Error) || !(e as NodeJS.ErrnoException).code?.startsWith('ERR_PARSE_ARGS')) {
+			throw e;
+		}
+
+		logger.error(e.message);
+		await showHelp(process.argv[2]);
+		process.exitCode = 1;
 	}
 }
-
 main().catch((e) => {
 	logger.error(e instanceof Error ? e.message : e);
 	process.exit(1);
