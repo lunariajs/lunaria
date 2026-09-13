@@ -1,8 +1,8 @@
-import type { Consola, InputLogObject, LogType } from 'consola';
 import { z } from 'zod';
 import { DashboardSchema, RendererConfigSchema } from '../dashboard/schema.ts';
+import type { LunariaIntegration } from '../integrations/types.ts';
 import { isRelative, stripTrailingSlash } from '../utils/utils.ts';
-import type { LunariaUserConfig, OptionalKeys } from './types.ts';
+import type { OptionalKeys } from './types.ts';
 
 const RepositorySchema = z.object({
 	name: z.string().transform((path) => stripTrailingSlash(path)),
@@ -43,31 +43,14 @@ export const FileSchema = z.discriminatedUnion('type', [
 	}),
 ]);
 
-export const SetupOptionsSchema = z.object({
-	config: z.any() as z.ZodType<LunariaUserConfig>,
-	updateConfig: z.function({
-		input: [z.record(z.string(), z.any()) as z.ZodType<Partial<LunariaUserConfig>>],
-		output: z.void(),
-	}),
-	// Importing ConsolaInstance from 'consola' directly is not possible due to missing imports for `LogFn`
-	logger: z.any() as z.ZodType<
-		Consola &
-			Record<
-				LogType,
-				{
-					// biome-ignore lint/suspicious/noExplicitAny: copied from Consola
-					(message: InputLogObject | any, ...args: any[]): void;
-					// biome-ignore lint/suspicious/noExplicitAny: copied from Consola
-					raw: (...args: any[]) => void;
-				}
-			>
-	>,
-});
-
 const LunariaIntegrationSchema = z.object({
 	name: z.string(),
 	hooks: z.object({
-		setup: z.function({ input: [SetupOptionsSchema], output: z.void() }).optional(),
+		setup: z
+			.custom<NonNullable<LunariaIntegration['hooks']['setup']>>(
+				(value) => typeof value === 'function',
+			)
+			.optional(),
 	}),
 });
 
