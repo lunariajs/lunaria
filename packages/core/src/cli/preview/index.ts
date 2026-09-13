@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import { join, resolve } from 'node:path';
 import { loadConfig } from '../../config/config.ts';
 import { DashboardNotFound } from '../../errors/errors.ts';
+import { runSetupHook } from '../../integrations/integrations.ts';
 import { bold, createCommandLogger, highlight } from '../console.ts';
 import type { PreviewOptions } from '../types.ts';
 
@@ -11,7 +12,7 @@ export async function preview(options: PreviewOptions) {
 	const logger = createCommandLogger('preview');
 	const requestedPort = options.port ? Number.parseInt(options.port, 10) : 3000;
 
-	const config = await loadConfig(options.config);
+	const config = await runSetupHook(await loadConfig(options.config), logger);
 
 	const outDir = resolve(config.outDir);
 	const dashboardPath = join(outDir, 'index.html');

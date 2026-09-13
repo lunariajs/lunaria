@@ -135,4 +135,26 @@ describe('CLI', () => {
 			assert.ok(unknownOption.stdout.includes('lunaria build'), unknownOption.stdout);
 		});
 	});
+	it('should preview the dashboard from the output directory set by integrations', async () => {
+		await withTestRepo(async (repo) => {
+			repo.writeFileTree({
+				// Integration hooks are functions, so this configuration is written as a module by hand.
+				'lunaria.config.mjs': `export default {
+	...${JSON.stringify(sampleValidConfig)},
+	integrations: [
+		{
+			name: 'test',
+			hooks: { setup: ({ updateConfig }) => updateConfig({ outDir: './out-sync' }) },
+		},
+	],
+};
+`,
+			});
+
+			// Without a build, the error names the directory the dashboard was looked for in.
+			const result = runCli(repo.getRepoPath(), ['preview']);
+			assert.notEqual(result.status, 0);
+			assert.ok(result.stderr.includes('out-sync'), result.stderr);
+		});
+	});
 });
