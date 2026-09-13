@@ -7,8 +7,10 @@ interface ErrorContext {
 export const ConfigNotFound = {
 	name: 'ConfigNotFound',
 	title: 'Configuration file not found.',
-	message:
-		'Could not find a valid JavaScript or TypeScript `lunaria.config` file. Have you created one yet?',
+	message: (path?: string) =>
+		path
+			? `Could not find a configuration file at \`${path}\`. Verify there are no typos in the path.`
+			: 'Could not find a valid JavaScript or TypeScript `lunaria.config` file. Have you created one yet?',
 } satisfies ErrorContext;
 
 export const ConfigValidationError = {
@@ -58,6 +60,27 @@ export const UnsupportedDictionaryFileFormat = {
 	title: 'An unsupported file format was found.',
 	message: (file: string) =>
 		`The file \`${file}\` has an unsupported file format. Dictionaries can be Markdown/MDX/Markdoc, JSON, gettext PO/POT, or JavaScript/TypeScript modules. Use one of these file formats or instead track this file without key completion checking by setting it to \`type: "universal"\` instead.`,
+} satisfies ErrorContext;
+
+export const AssetNotFound = {
+	name: 'AssetNotFound',
+	title: 'Dashboard asset not found.',
+	message: (path: string) =>
+		`Could not find the asset file at \`${path}\`. Verify the paths in your \`dashboard\` configuration point to existing files.`,
+} satisfies ErrorContext;
+
+export const StatusNotFound = {
+	name: 'StatusNotFound',
+	title: 'Status file not found.',
+	message: (path: string) =>
+		`Could not find a previously built status at \`${path}\`. Run \`lunaria build\` without \`--skip-status\` to build a new one.`,
+} satisfies ErrorContext;
+
+export const DashboardNotFound = {
+	name: 'DashboardNotFound',
+	title: 'Dashboard build not found.',
+	message: (path: string) =>
+		`Could not find a dashboard to preview at \`${path}\`. Run \`lunaria build\` to build one first.`,
 } satisfies ErrorContext;
 
 export const UnsupportedIntegrationSelfUpdate = {

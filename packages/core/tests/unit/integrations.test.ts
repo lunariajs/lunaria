@@ -2,13 +2,17 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import { consola } from 'consola';
 import { validateFinalConfig } from '../../src/config/config.ts';
+import type { LunariaUserConfig } from '../../src/config/types.ts';
 import { runSetupHook } from '../../src/integrations/integrations.ts';
-import type { CompleteLunariaUserConfig } from '../../src/integrations/types.ts';
+import type {
+	CompleteLunariaUserConfig,
+	LunariaIntegration,
+} from '../../src/integrations/types.ts';
 import { sampleValidConfig } from '../utils.ts';
 
 describe('Integration setup hook', async () => {
 	it("should throw if it tries to update the config's `integrations` field", async () => {
-		const sampleIntegration = {
+		const sampleIntegration: LunariaIntegration = {
 			name: '@lunariajs/test',
 			hooks: { setup: ({ updateConfig }) => updateConfig({ integrations: [] }) },
 		};
@@ -20,7 +24,6 @@ describe('Integration setup hook', async () => {
 						...sampleValidConfig,
 						integrations: [sampleIntegration],
 					},
-					// @ts-expect-error: The consola instance has an weird type issue.
 					consola,
 				),
 			{
@@ -32,7 +35,7 @@ describe('Integration setup hook', async () => {
 	});
 
 	it('should successfully update the configuration', async () => {
-		const addedConfigFields = {
+		const addedConfigFields: Partial<LunariaUserConfig> = {
 			sourceLocale: {
 				label: 'English',
 				lang: 'en',
@@ -51,7 +54,7 @@ describe('Integration setup hook', async () => {
 			],
 		};
 
-		const sampleIntegration = {
+		const sampleIntegration: LunariaIntegration = {
 			name: '@lunariajs/test',
 			hooks: { setup: ({ updateConfig }) => updateConfig(addedConfigFields) },
 		};
@@ -64,7 +67,6 @@ describe('Integration setup hook', async () => {
 				},
 				integrations: [sampleIntegration],
 			},
-			// @ts-expect-error: The consola instance has an weird type issue.
 			consola,
 		);
 
@@ -79,7 +81,7 @@ describe('Integration setup hook', async () => {
 	});
 
 	it('should successfully resolve an async hook', async () => {
-		const sampleIntegration = {
+		const sampleIntegration: LunariaIntegration = {
 			name: '@lunariajs/test',
 			hooks: {
 				setup: async ({ updateConfig }) =>
@@ -111,7 +113,6 @@ describe('Integration setup hook', async () => {
 				...sampleValidConfig,
 				integrations: [sampleIntegration],
 			},
-			// @ts-expect-error: The consola instance has an weird type issue.
 			consola,
 		);
 

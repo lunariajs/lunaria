@@ -42,6 +42,10 @@ export default defineConfig({
 			type: 'dictionary',
 		},
 	],
+	dashboard: {
+		title: 'Starlight Example Localization Status',
+    basesToHide: ['src/content/docs/', 'src/content/i18n/'],
+  },
 	tracking: {
 		localizableProperty: 'i18nReady',
 		ignoredKeywords: [

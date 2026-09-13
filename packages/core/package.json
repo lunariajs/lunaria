@@ -7,6 +7,7 @@
     "l10n",
     "translation",
     "localization",
+    "dashboard",
     "management"
   ],
   "bugs": "https://github.com/lunariajs/lunaria/issues",
@@ -18,6 +19,9 @@
   "license": "MIT",
   "author": "Yan Thomas",
   "type": "module",
+  "bin": {
+    "lunaria": "./dist/cli/index.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -26,6 +30,14 @@
     "./config": {
       "types": "./dist/config/index.d.ts",
       "default": "./dist/config/index.js"
+    },
+    "./dashboard": {
+      "types": "./dist/dashboard/index.d.ts",
+      "default": "./dist/dashboard/index.js"
+    },
+    "./components": {
+      "types": "./dist/dashboard/components.d.ts",
+      "default": "./dist/dashboard/components.js"
     }
   },
   "types": "./dist/index.d.ts",

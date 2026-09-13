@@ -18,12 +18,15 @@ import type { LunariaOpts } from './types.ts';
 import { createCache, createGitHostingLinks, exists, md5 } from './utils/utils.ts';
 
 export type * from './config/types.ts';
+export { defineRendererConfig, generateDashboard } from './dashboard/dashboard.ts';
+export { html } from './dashboard/html.ts';
+export type * from './dashboard/types.ts';
 export type * from './files/types.ts';
 export type { LunariaIntegration } from './integrations/types.ts';
 export type * from './status/types.ts';
 export type { LunariaOpts } from './types.ts';
 
-class Lunaria {
+export class Lunaria {
 	readonly config: LunariaConfig;
 	git: LunariaGitInstance;
 	#logger: ConsolaInstance;
@@ -108,19 +111,13 @@ class Lunaria {
 
 	async getFullStatus() {
 		const sourcePaths = await this.getSourcePaths();
-		const status: LunariaStatus = [];
 
-		await pAll(
-			sourcePaths.map((path) => {
-				return async () => {
-					const entry = await this.#getFileStatus(path, false);
-					if (entry) status.push(entry);
-				};
-			}),
-			{
-				concurrency: 10,
-			},
+		// The entries keep the order of the source paths, so the status is stable between builds.
+		const entries = await pAll(
+			sourcePaths.map((path) => () => this.#getFileStatus(path, false)),
+			{ concurrency: 10 },
 		);
+		const status: LunariaStatus = entries.filter((entry) => entry !== undefined);
 
 		// Save the existing git data into the cache for next builds.
 		if (!this.#force) {

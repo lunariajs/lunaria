@@ -20,21 +20,27 @@ const configPaths = Object.freeze([
 	'lunaria.config.cts',
 ]);
 
-/** Finds the first `lunaria.config.*` file in the current working directoy and return its path.  */
-async function findConfig() {
-	for (const path of configPaths) {
+/**
+ * Finds the first `lunaria.config.*` file in the current working directory and returns its path.
+ * When a custom path is specified, it is used instead as long as the file exists.
+ */
+async function findConfig(customPath?: string) {
+	for (const path of customPath ? [customPath] : configPaths) {
 		const resolvedPath = resolve(path);
 		if (await exists(resolvedPath)) {
 			return resolvedPath;
 		}
 	}
 
-	return new Error(ConfigNotFound.message);
+	return new Error(customPath ? ConfigNotFound.message(customPath) : ConfigNotFound.message());
 }
 
-/** Loads a CJS/ESM `lunaria.config.*` file from the root of the current working directory. */
-export async function loadConfig() {
-	const path = await findConfig();
+/**
+ * Loads a CJS/ESM `lunaria.config.*` file from the root of the current working directory,
+ * or from the specified path.
+ */
+export async function loadConfig(customPath?: string) {
+	const path = await findConfig(customPath);
 	if (path instanceof Error) {
 		throw path;
 	}

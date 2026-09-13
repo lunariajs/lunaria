@@ -35,14 +35,15 @@ describe('Configuration validation', () => {
 	});
 
 	it("should throw when `sourceLocale`, `locales`, and `files` aren't set after setup hook", () => {
-		assert.throws(() =>
-			validateFinalConfig({
-				...sampleValidConfig,
-				files: undefined,
-				locales: undefined,
-				sourceLocale: undefined,
-			}),
-		);
+		const incompleteConfig = {
+			...sampleValidConfig,
+			files: undefined,
+			locales: undefined,
+			sourceLocale: undefined,
+		};
+
+		// @ts-expect-error - Testing an incomplete config
+		assert.throws(() => validateFinalConfig(incompleteConfig));
 	});
 
 	it('should not accept relative paths in rootDir property', () => {

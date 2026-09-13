@@ -1,3 +1,9 @@
+import type {
+	Dashboard,
+	DashboardUserConfig,
+	RendererConfig,
+	RendererUserConfig,
+} from '../dashboard/types.ts';
 import type { LunariaIntegration } from '../integrations/types.ts';
 
 export type Pattern = string | { source: string; locales: string };
@@ -49,6 +55,9 @@ export interface LunariaConfig {
 	integrations: LunariaIntegration[];
 	cacheDir: string;
 	cloneDir: string;
+	dashboard: Dashboard;
+	renderer: RendererConfig;
+	outDir: string;
 }
 
 export interface LunariaUserConfig {
@@ -69,4 +78,7 @@ export interface LunariaUserConfig {
 	integrations?: LunariaIntegration[];
 	cacheDir?: string;
 	cloneDir?: string;
+	dashboard?: DashboardUserConfig;
+	renderer?: RendererUserConfig;
+	outDir?: string;
 }

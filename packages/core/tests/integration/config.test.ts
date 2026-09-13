@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import { createLunaria } from '../../src/index.ts';
-import { getLocalization, withTestRepo } from '../utils.ts';
+import { createConfigFile, getLocalization, sampleValidConfig, withTestRepo } from '../utils.ts';
 
 describe('Configuration', () => {
 	it('should load config from a lunaria.config file', async () => {
@@ -14,21 +14,7 @@ describe('Configuration', () => {
 					},
 				},
 			});
-			repo.writeFile(
-				'lunaria.config.mjs',
-				`export default {
-         	repository: { name: 'lunaria/test' },
-         	sourceLocale: { label: 'English', lang: 'en' },
-         	locales: [{ label: 'Spanish', lang: 'es' }],
-         	files: [
-          		{
-         			include: ['src/content/**/*.mdx'],
-         			pattern: 'src/content/@lang/@path',
-         			type: 'universal',
-          		},
-         	],
-        };`,
-			);
+			repo.writeFile('lunaria.config.mjs', createConfigFile(sampleValidConfig));
 			repo.commitAllChanges('add config and docs', '2024-01-01');
 
 			const lunaria = await createLunaria({ force: true, logLevel: 'silent' });

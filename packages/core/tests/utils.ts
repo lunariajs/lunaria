@@ -3,8 +3,12 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { LunariaUserConfig } from '../src/config/types.ts';
 import type { CompleteLunariaUserConfig } from '../src/integrations/types.ts';
 import type { LunariaStatus } from '../src/status/types.ts';
+
+const cliPath = fileURLToPath(new URL('../src/cli/index.ts', import.meta.url));
 
 interface FileTree {
 	[name: string]: string | FileTree;
@@ -32,6 +36,14 @@ export const sampleValidConfig: CompleteLunariaUserConfig = {
 		},
 	],
 };
+
+export function createConfigFile(config: LunariaUserConfig) {
+	return `export default ${JSON.stringify(config, null, '\t')};\n`;
+}
+
+export function runCli(cwd: string, args: string[]) {
+	return spawnSync(process.execPath, [cliPath, ...args], { cwd, encoding: 'utf8' });
+}
 
 export function makeTestRepo(onPath?: string) {
 	const repoPath = realpathSync(onPath ?? mkdtempSync(join(tmpdir(), 'lunaria-test-git-')));
