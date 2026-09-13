@@ -8,7 +8,7 @@ import { parse } from 'ultramatter';
 import { loadConfig, validateInitialConfig } from './config/config.ts';
 import type { LunariaConfig, Pattern } from './config/types.ts';
 import { CONSOLE_LEVELS } from './constants.ts';
-import { FileNotFound, FilesEntryNotFound } from './errors/errors.ts';
+import { FileNotFound, FilesEntryNotFound, ShallowRepositoryFound } from './errors/errors.ts';
 import { createPathResolver } from './files/paths.ts';
 import { runSetupHook } from './integrations/integrations.ts';
 import { LunariaGitInstance } from './status/git.ts';
@@ -360,6 +360,13 @@ export async function createLunaria(opts?: LunariaOpts) {
 			: await (await createCache(config.cacheDir, 'git', hash)).contents();
 
 		const lunariaGit = new LunariaGitInstance(config, logger, cache, opts?.force);
+
+		// Shallow clones don't contain the commit history needed to compare source and localized files.
+		// Lunaria intentionally does not unshallow given some hosting platforms disallow it, and instead
+		// we automatically handle it on a per-platform basis.
+		if (!config.external && (await lunariaGit.isShallowRepository())) {
+			throw new Error(ShallowRepositoryFound.message);
+		}
 
 		// TODO: Refactor this so its easier to add new platforms later.
 		// Netlify does a blobless clone, meaning we have to fetch the blobs to ensure it can access all files.

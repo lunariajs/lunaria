@@ -83,6 +83,13 @@ export const DashboardNotFound = {
 		`Could not find a dashboard to preview at \`${path}\`. Run \`lunaria build\` to build one first.`,
 } satisfies ErrorContext;
 
+export const ShallowRepositoryFound = {
+	name: 'ShallowRepositoryFound',
+	title: 'A shallow repository was found.',
+	message:
+		'The repository is a shallow clone, which hides the git history necessary to compute an accurate status. Ensure the full history is available before running Lunaria, e.g. by setting `fetch-depth: 0` in `actions/checkout` or by running `git fetch --unshallow`.',
+} satisfies ErrorContext;
+
 export const UnsupportedIntegrationSelfUpdate = {
 	name: 'UnsupportedIntegrationSelfUpdate',
 	title: "An integration attempted to update the configuration's `integrations` field.",

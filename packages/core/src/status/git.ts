@@ -28,6 +28,10 @@ export class LunariaGitInstance {
 		this.#cache = cache;
 	}
 
+	async isShallowRepository() {
+		return (await this.simpleGit.revparse(['--is-shallow-repository'])).trim() === 'true';
+	}
+
 	async getFileCommits(path: string, from?: string, to?: string): Promise<Commit[]> {
 		const commits = await this.simpleGit.log({
 			file: path,
