@@ -150,19 +150,17 @@ function createConfigFile(answers: {
 	branch: string;
 	rootDir: string | undefined;
 }) {
-	const quote = (value: string) => `'${value.replaceAll("'", "\\'")}'`;
-
 	const repository = [
-		`\t\tname: ${quote(answers.name)},`,
+		`\t\tname: ${JSON.stringify(answers.name)},`,
 		// "main" is the default value, can be omitted.
-		...(answers.branch !== 'main' ? [`\t\tbranch: ${quote(answers.branch)},`] : []),
-		...(answers.rootDir ? [`\t\trootDir: ${quote(answers.rootDir)},`] : []),
+		...(answers.branch !== 'main' ? [`\t\tbranch: ${JSON.stringify(answers.branch)},`] : []),
+		...(answers.rootDir ? [`\t\trootDir: ${JSON.stringify(answers.rootDir)},`] : []),
 		// "github" is the default value, can be omitted.
-		...(answers.hosting !== 'github' ? [`\t\thosting: ${quote(answers.hosting)},`] : []),
+		...(answers.hosting !== 'github' ? [`\t\thosting: ${JSON.stringify(answers.hosting)},`] : []),
 	];
 
 	return [
-		"import { defineConfig } from '@lunariajs/core/config';",
+		'import { defineConfig } from "@lunariajs/core/config";',
 		'',
 		'export default defineConfig({',
 		'\trepository: {',
@@ -171,13 +169,13 @@ function createConfigFile(answers: {
 		'\t// Complete your configuration with your source locale, localized locales, and tracked files.',
 		'\t// Read the configuration reference: https://lunaria.dev/reference/configuration/',
 		'\t//',
-		"\t// sourceLocale: { label: 'English', lang: 'en' },",
-		"\t// locales: [{ label: 'Português', lang: 'pt' }],",
+		'\t// sourceLocale: { label: "English", lang: "en" },',
+		'\t// locales: [{ label: "Português", lang: "pt" }],',
 		'\t// files: [',
 		'\t// \t{',
-		"\t// \t\tinclude: ['src/content/docs/**/*.mdx'],",
-		"\t// \t\tpattern: 'src/content/docs/@lang/@path',",
-		"\t// \t\ttype: 'universal',",
+		'\t// \t\tinclude: ["src/content/docs/**/*.mdx"],',
+		'\t// \t\tpattern: "src/content/docs/@lang/@path",',
+		'\t// \t\ttype: "universal",',
 		'\t// \t},',
 		'\t// ],',
 		'});',
