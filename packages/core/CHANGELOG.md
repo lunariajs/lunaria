@@ -1,5 +1,11 @@
 # @lunariajs/core
 
+## 0.2.0
+
+### Minor Changes
+
+- [#179](https://github.com/lunariajs/lunaria/pull/179) [`dfe448a`](https://github.com/lunariajs/lunaria/commit/dfe448a1770aefbf6ef1be4e1c366a22279da15c) Thanks [@yanthomasdev](https://github.com/yanthomasdev)! - Updates Lunaria to its v0.2 version
+
 ## 0.1.1
 
 ### Patch Changes
