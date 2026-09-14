@@ -41,7 +41,7 @@ yarn add @lunariajs/core
 
 Then, add the following `lunaria` commands as part of your `package.json`'s `scripts` field:
 
-```json title="package.json" ins={5}
+```json title="package.json" ins={5-6}
 "scripts": {
 	"dev": "astro dev",
 	"build": "astro build",
@@ -51,56 +51,59 @@ Then, add the following `lunaria` commands as part of your `package.json`'s `scr
 }
 ```
 
-## 2. Create `lunaria.config.json`
+## 2. Create `lunaria.config.mjs`
 
-Lunaria is configured using `lunaria.config.json`. This file is required so Lunaria knows about your repository structure and what should be tracked.
+Lunaria is configured using a `lunaria.config.mjs` file. This file is required so Lunaria knows about your repository structure and what should be tracked.
 
-```json title="lunaria.config.json" mark={2}
-{
-	"$schema": "./node_modules/@lunariajs/core/config.schema.json"
-}
+```js title="lunaria.config.mjs"
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({});
 ```
 
 :::tip
-`@lunariajs/core` comes with a JSON Schema you can refer to with the optional `$schema` property to add IntelliSense support in your code editor.
+`@lunariajs/core/config` exports the `defineConfig()` helper you can wrap your configuration with to add IntelliSense support in your code editor.
+
+Lunaria also supports `.js`/`.cjs` and `.ts`/`.mts` configuration files, so you can opt for the best file extension for your project.
 :::
 
 ## 3. Configure the package
 
-Before generating your first localization dashboard, you have to set up the `repository`, `defaultLocale`, and `locales` fields of your `lunaria.config.json` file.
+Before generating your first localization dashboard, you have to set up the `repository`, `sourceLocale`, `locales`, and `files` fields of your `lunaria.config.mjs` file.
 
-The following example sets up Lunaria to track Markdown/MDX content for both English and Portuguese in a sample project, hosted on `https://github.com/me/cool-project/`:
+The following example sets up Lunaria to track Markdown content for both English and Portuguese in a sample project, hosted on `https://github.com/me/cool-docs/`:
 
-```json title="lunaria.config.json"
-{
-	"$schema": "./node_modules/@lunariajs/core/config.schema.json",
-	"repository": {
-		"name": "me/cool-docs"
+```js title="lunaria.config.mjs"
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+	repository: {
+		name: 'me/cool-docs',
 	},
-	"files": [
+	sourceLocale: {
+		label: 'English',
+		lang: 'en',
+	},
+	locales: [
 		{
-			"location": "content/**/*.md",
-			"pattern": "content/@lang/@path",
-			"type": "universal"
-		}
+			label: 'Português',
+			lang: 'pt',
+		},
 	],
-	"defaultLocale": {
-		"label": "English",
-		"lang": "en"
-	},
-	"locales": [
+	files: [
 		{
-			"label": "Português",
-			"lang": "pt"
-		}
-	]
-}
+			include: ['content/en/**/*.md'],
+			pattern: 'content/@lang/@path',
+			type: 'universal',
+		},
+	],
+});
 ```
 
 Learn more about all the available options in the [Configuration Reference guide](/reference/configuration/).
 
 :::tip
-Visit the [Lunaria repository's examples directory](https://github.com/yanthomasdev/lunaria/tree/main/examples/) to see configuration examples for different frameworks and projects.
+Visit the [Lunaria repository's examples directory](https://github.com/lunariajs/lunaria/tree/main/examples/) to see configuration examples for different frameworks and projects.
 :::
 
 ## 4. Next Steps

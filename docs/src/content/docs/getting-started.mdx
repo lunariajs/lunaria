@@ -8,7 +8,7 @@ import { LinkCard, CardGrid } from '@astrojs/starlight/components';
 
 :::caution[Work in progress]
 Lunaria is currently in public beta and **breaking changes** are bound to happen.
-If you've found anything wrong or unexpected, please [open an issue on GitHub](https://github.com/yanthomasdev/lunaria/issues/new).
+If you've found anything wrong or unexpected, please [open an issue on GitHub](https://github.com/lunariajs/lunaria/issues/new).
 :::
 
 Lunaria is an **localization management toolchain** for open-source projects, giving the tools necessary for both maintainers and contributors to build a seamless and efficient localization workflow.
@@ -49,7 +49,7 @@ yarn add @lunariajs/core
 </TabItem>
 </Tabs>
 
-Then, you can run `lunaria init` to setup Lunaria, prompting you with a few questions and automatically filling your answers in a new `lunaria.config.json` file:
+Then, you can run `lunaria init` to setup Lunaria, prompting you with a few questions and automatically filling your answers in a new `lunaria.config.mjs` file:
 
 <Tabs>
 <TabItem label="npm">
@@ -75,9 +75,9 @@ yarn lunaria init
 </TabItem>
 </Tabs>
 
-Depending of your project's structure and if you run `lunaria sync` during the initialization successfully, you might have all the requirements to build your first localization dashboard.
+Before building your first localization dashboard, you still need to fill in the `sourceLocale`, `locales`, and `files` fields of your Lunaria configuration file. 
 
-In case any of the fields `repository`, `defaultLocale`, `locales`, or `files` is missing in your `lunaria.config.json`, visit the [Configuration Reference guide](/reference/configuration) to set it up and then follow the instructions below.
+Visit the [Configuration Reference guide](/reference/configuration) to set them up and then follow the instructions below.
 
 ### Build your first dashboard
 

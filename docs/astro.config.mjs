@@ -56,6 +56,10 @@ export default defineConfig({
 							link: 'manual-installation',
 						},
 						{
+							label: 'Upgrade Lunaria',
+							link: 'upgrade-lunaria',
+						},
+						{
 							label: 'Recommendations',
 							link: 'recommendations',
 						},

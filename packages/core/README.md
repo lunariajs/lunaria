@@ -21,39 +21,40 @@ yarn add @lunariajs/core
 
 ## Basic Usage
 
-Start using `@lunariajs/core` by setting up your own `lunaria.config.json` file and adding a script to your `package.json` file.
+Start using `@lunariajs/core` by setting up your own `lunaria.config.mjs` file and adding a script to your `package.json` file.
 
 The example below contains all of the **required** options to generate a dashboard tracking the status of both the Portuguese and Spanish translations of a site:
 
-```json
-// lunaria.config.json
-{
-  "$schema": "./node_modules/@lunariajs/core/config.schema.json",
-  "repository": {
-    "name": "me/cool-docs"
+```js
+// lunaria.config.mjs
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  repository: {
+    name: 'me/cool-docs',
   },
-  "files": [
-    {
-      "location": "content/**/*.md",
-      "pattern": "content/@lang/@path",
-      "type": "universal"
-    }
-  ],
-  "defaultLocale": {
-    "label": "English",
-    "lang": "en"
+  sourceLocale: {
+    label: 'English',
+    lang: 'en',
   },
-  "locales": [
+  locales: [
     {
-      "label": "Português",
-      "lang": "pt"
+      label: 'Português',
+      lang: 'pt',
     },
     {
-      "label": "Spanish",
-      "lang": "es"
-    }
-  ]
-}
+      label: 'Spanish',
+      lang: 'es',
+    },
+  ],
+  files: [
+    {
+      include: ['content/en/**/*.md'],
+      pattern: 'content/@lang/@path',
+      type: 'universal',
+    },
+  ],
+});
 ```
 
 Now, you need to add a new script to your `package.json` file to trigger a dashboard build during your website's deploy process, like so:
@@ -67,4 +68,4 @@ Now, you need to add a new script to your `package.json` file to trigger a dashb
   },
 ```
 
-Want other usage examples? Head over to the [`examples/` directory](https://github.com/yanthomasdev/lunaria/tree/main/examples/) and inspect the source code for tips & tricks about using `@lunariajs/core` with other frameworks and environments.
+Want other usage examples? Head over to the [`examples/` directory](https://github.com/lunariajs/lunaria/tree/main/examples/) and inspect the source code for tips & tricks about using `@lunariajs/core` with other frameworks and environments.

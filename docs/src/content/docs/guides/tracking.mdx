@@ -20,31 +20,37 @@ A "major commit" is the name given to a commit that has significant content chan
 
 By default, every commit is considered _major_, and to allow for certain commits to not be considered, Lunaria offers a few ways to [manipulate status changes](#manipulating-status-changes).
 
+:::note
+Lunaria needs the full git history of your repository to compare the commits of your files. Shallow clones, like the ones made by default in CI environments, will make Lunaria fail with an error until the full history is fetched, e.g. by setting `fetch-depth: 0` in `actions/checkout` or by running `git fetch --unshallow`.
+:::
+
 ## Set up tracking
 
-To add files to Lunaria's tracking system, you need to add the `files` field to your `lunaria.config.json` file. It will receive an array of [objects of the `File` type](/reference/configuration/#file), like the following example:
+To add files to Lunaria's tracking system, you need to add the `files` field to your `lunaria.config.mjs` file. It will receive an array of [objects of the `File` type](/reference/configuration/#file), like the following example:
 
-```json title="lunaria.config.json" add={2-8}
-{
-  "files": [
+```js title="lunaria.config.mjs" add={4-10}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  files: [
     {
-      "location": "src/content/docs/**/*.md",
-      "pattern": "src/content/docs/@lang/@path",
-      "type": "universal"
-    }
-  ]
-}
+      include: ['src/content/docs/en/**/*.md'],
+      pattern: 'src/content/docs/@lang/@path',
+      type: 'universal',
+    },
+  ],
+});
 ```
 
 In this example, Lunaria will track all Markdown files within the `src/content/docs` directory and its subdirectories. More entries can be added to `files` to track different sets of files differently or to better organize them in the generated dashboard since the order in the array will be respected.  
 
 Read further to understand how all of these fields work.
 
-### `location`
+### `include`
 
-The `location` field expects a [glob pattern](https://en.wikipedia.org/wiki/Glob_(programming)) string that matches all of the desired files to be tracked within all locales. 
+The `include` field expects an array of [glob patterns](https://en.wikipedia.org/wiki/Glob_(programming)) that match all of the desired source files to be tracked.
 
-Lunaria's glob patterns are powered by [micromatch](https://github.com/micromatch/micromatch), and although it's not the place for this documentation to explain glob patterns, here are a few common snippets that you can find useful to know:
+Lunaria's glob patterns are powered by [tinyglobby](https://github.com/SuperchupuDev/tinyglobby), and although it's not the place for this documentation to explain glob patterns, here are a few common snippets that you can find useful to know:
 
 - `**/*.md`: Matches all `.md` files on the directory and its subdirectories.
 - `*.md`: Matches all `.md` files on the directory.
@@ -55,21 +61,86 @@ Lunaria's glob patterns are powered by [micromatch](https://github.com/micromatc
 
 The `pattern` field expects a [path-to-regexp](https://github.com/pillarjs/path-to-regexp) string that will be used to extract the shared path of files and infer their relation. Lunaria adds the `@lang` and `@path` placeholders to help you indicate where the locale and the rest of the path should be added in.
 
-In very few cases, `@lang` and `@path` might not correctly represent your project's file structure. Internally, these placeholders are replaced with slightly opinionated `:lang` and `:path` path parameters. You can also use these parameters instead of placeholders, tweaking them with [prefixes, suffixes, and/or modifiers](https://github.com/pillarjs/path-to-regexp#parameters) to match your project's file structure.
+In very few cases, `@lang` and `@path` might not correctly represent your project's file structure. Internally, these placeholders are replaced with slightly opinionated `:lang` and `:path` path parameters. You can also use these parameters instead of placeholders, tweaking them with [prefixes, suffixes, and/or modifiers](https://github.com/pillarjs/path-to-regexp/tree/v6.3.0#parameters) to match your project's file structure.
 
 For example, to support Nextra's rather unique i18n file structure, you could use the following pattern using `:path+` instead of `@path`:
 
-```json title="lunaria.config.json" mark={5}
-{
-  "files": [
+```js title="lunaria.config.mjs" mark={7}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  files: [
     {
-      "location": "pages/**/*.mdx",
-      "pattern": "pages/:path+.@lang.mdx",
-      "type": "universal"
-    }
-  ]
-}
+      include: ['pages/**/*.en.mdx'],
+      pattern: 'pages/:path+.@lang.mdx',
+      type: 'universal',
+    },
+  ],
+});
 ```
+
+#### Different source and localized paths
+
+When the source and localized files don't share the same structure, `pattern` also accepts an object with a `source` pattern for the source files and a `locales` pattern for the localized files. 
+
+This is helpful for projects where the source content lives in the root of the content directory while localizations live in a subdirectory per locale:
+
+```js title="lunaria.config.mjs" mark={7-10}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  files: [
+    {
+      include: ['src/content/docs/**/*.md'],
+      pattern: {
+        source: 'src/content/docs/@path',
+        locales: 'src/content/docs/@lang/@path',
+      },
+      type: 'universal',
+    },
+  ],
+});
+```
+
+#### Custom parameters
+
+The `@lang` placeholder always matches the `lang` value of your locales, but some projects use a different value in their file paths, e.g. `pt-BR` instead of `pt-br`. For these cases, every locale can set additional `parameters` that become placeholders available in your patterns, prefixed with `@`.
+
+The example below adds a `tag` parameter to each locale, used to match the file names of a dictionary with the `@tag` placeholder:
+
+```js title="lunaria.config.mjs" mark={7-9, 14-16, 22}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  sourceLocale: {
+    label: 'English',
+    lang: 'en',
+    parameters: {
+      tag: 'en',
+    },
+  },
+  locales: [
+    {
+      label: 'Português do Brasil',
+      lang: 'pt-br',
+      parameters: {
+        tag: 'pt-BR',
+      },
+    },
+  ],
+  files: [
+    {
+      include: ['src/i18n/en.yml'],
+      pattern: 'src/i18n/@tag.yml',
+      type: 'dictionary',
+    },
+  ],
+});
+```
+
+:::note
+All locales, including the `sourceLocale`, must set the same `parameters` keys.
+:::
 
 ### `type`
 
@@ -77,38 +148,44 @@ The `type` field determines how these files will be treated by Lunaria. Differen
 
 For more information, read the available types in the [file types section of the configuration reference](/reference/configuration/#file-types).
 
-### `ignore`
+### `exclude`
 
-Optionally, the `ignore` field can be added to exclude specific files from tracking. It expects an array of [glob pattern](https://en.wikipedia.org/wiki/Glob_(programming)) strings that match all of the files to be ignored, for example:
+Optionally, the `exclude` field can be added to exclude specific files from tracking. It expects an array of [glob patterns](https://en.wikipedia.org/wiki/Glob_(programming)) that match all of the files to be ignored, for example:
 
-```json title="lunaria.config.json" add={7}
-{
-  "files": [
+```js title="lunaria.config.mjs" add={9}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  files: [
     {
-      "location": "src/content/docs/**/*.md",
-      "pattern": "src/content/docs/@lang/@path",
-      "type": "universal",
-      "ignore": ["src/content/docs/**/old.md"]
-    }
-  ]
-}
+      include: ['src/content/docs/en/**/*.md'],
+      pattern: 'src/content/docs/@lang/@path',
+      type: 'universal',
+      exclude: ['src/content/docs/**/old.md'],
+    },
+  ],
+});
 ```
 
 ## Granularly enabling files for localization
 
 You may wish to only enable certain files for localization, e.g. only files that have been in the source locale for more than a week, or that aren't expecting to be restructured soon.
 
-One way of doing so would be to exclude specific files with the [`ignore`](#ignore) field, but this would require you to manually update the configuration file every time a file is ready for localization.
+One way of doing so would be to exclude specific files with the [`exclude`](#exclude) field, but this would require you to manually update the configuration file every time a file is ready for localization.
 
-Instead, you can use the [`localizableProperty`](/reference/configuration/#localizableproperty) available to files that accept frontmatter metadata (e.g. Markdown, MDX, YAML). Every file where the property is `true` will be added to the dashboard, and omitted otherwise:
+Instead, you can use the [`tracking.localizableProperty`](/reference/configuration/#trackinglocalizableproperty) available to files that accept frontmatter metadata (e.g. Markdown, MDX, Markdoc). Every file where the property is `true` will be added to the dashboard, and omitted otherwise:
 
 <Steps>
-1. Add the [`localizableProperty`](/reference/configuration/#localizableproperty) field to your `lunaria.config.json` file, with the name of the frontmatter property that will be used to enable localization:
+1. Add the [`tracking.localizableProperty`](/reference/configuration/#trackinglocalizableproperty) field to your `lunaria.config.mjs` file, with the name of the frontmatter property that will be used to enable localization:
 
-    ```json title="lunaria.config.json" add={2}
-    {
-      "localizableProperty": "isLocalizable"
-    }
+    ```js title="lunaria.config.mjs" add={4-6}
+    import { defineConfig } from '@lunariajs/core/config';
+
+    export default defineConfig({
+      tracking: {
+        localizableProperty: 'isLocalizable',
+      },
+    });
     ```
 
 2. Add the frontmatter property to the files you want to enable for localization with the value `true`:
@@ -132,7 +209,7 @@ This is helpful when there are changes that shouldn't mark localizations as outd
 
 ### Ignoring commits
 
-To ignore all changes within a commit, you can add a [`ignoreKeyword`](/reference/configuration/#ignorekeywords) to your commit or pull request's title (when squash merging). By default, the keywords `fix typo` and `lunaria-ignore` will be ignored. 
+To ignore all changes within a commit, you can add an [ignored keyword](/reference/configuration/#trackingignoredkeywords) to your commit or pull request's title (when squash merging). By default, the keywords `fix typo` and `lunaria-ignore` will be ignored. 
 
 For example, the following commit title would be ignored:
 
@@ -146,27 +223,35 @@ On the other hand, the following commit title would trigger status changes:
 Add a new section on `getting-started.mdx` file
 ```
 
-Different `ignoreKeywords` can be added, overriding the default ones:
+Different `ignoredKeywords` can be added, overriding the default ones:
 
 <Steps>
-1. Add the `ignoreKeywords` field to your `lunaria.config.json` file, with an array of keywords to be ignored:
+1. Add the `tracking.ignoredKeywords` field to your `lunaria.config.mjs` file, with an array of keywords to be ignored:
 
-    ```json title="lunaria.config.json" add={2}
-    {
-      "ignoreKeywords": ["@ignore", "[ci]", "[format]"]
-    }
+    ```js title="lunaria.config.mjs" add={4-6}
+    import { defineConfig } from '@lunariajs/core/config';
+
+    export default defineConfig({
+      tracking: {
+        ignoredKeywords: ['@ignore', '[ci]', '[format]'],
+      },
+    });
     ```
 </Steps>
 
-The `ignoreKeywords` feature can also be disabled completely:
+The `ignoredKeywords` feature can also be disabled completely:
 
 <Steps>
-1. Add the `ignoreKeywords` field to your `lunaria.config.json` file, with an empty array:
+1. Add the `tracking.ignoredKeywords` field to your `lunaria.config.mjs` file, with an empty array:
 
-    ```json title="lunaria.config.json" add={2}
-    {
-      "ignoreKeywords": []
-    }
+    ```js title="lunaria.config.mjs" add={4-6}
+    import { defineConfig } from '@lunariajs/core/config';
+
+    export default defineConfig({
+      tracking: {
+        ignoredKeywords: [],
+      },
+    });
     ```
 </Steps>
 
@@ -188,9 +273,8 @@ A tracker directive is a custom syntax added to a commit's description with a li
 
 #### `@lunaria-track`
 
-The `@lunaria-track` directive will track the changes of all the listed files, and ignore all the ones that weren't on the same commit.
+The `@lunaria-track` directive will track the changes of all the listed files, and ignore all the ones that weren't on the same commit. For example:
 
-**Example:**
 ```
 @lunaria-track:src/content/docs/en/**.mdx
 ```
@@ -198,9 +282,8 @@ The `@lunaria-track` directive will track the changes of all the listed files, a
 
 #### `@lunaria-ignore`
 
-The `@lunaria-ignore` directive will ignore the changes of all the listed files, and track all the ones that weren't on the same commit.
+The `@lunaria-ignore` directive will ignore the changes of all the listed files, and track all the ones that weren't on the same commit. For example:
 
-**Example:**
 ```
 @lunaria-ignore:src/content/docs/ja/**.mdx
 ```

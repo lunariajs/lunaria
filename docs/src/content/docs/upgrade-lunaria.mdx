@@ -1,0 +1,445 @@
+---
+title: Upgrade Lunaria
+description: How to upgrade your project to the latest stable version.
+---
+
+import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+To get started, update your project's version of `@lunariajs/core` to the latest version using your package manager:
+
+<Tabs>
+<TabItem label="npm">
+
+```sh
+npm install @lunariajs/core@latest
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh
+pnpm install @lunariajs/core@latest
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh
+yarn add @lunariajs/core@latest
+```
+
+</TabItem>
+</Tabs>
+
+:::note
+Lunaria v0.2 changes the configuration file format, so every project needs at least a [new configuration file](#new-configuration-file-format) to keep working.
+
+After that, check below for what else has changed that might need updating in your project.
+:::
+
+Lunaria v0.2 includes [breaking changes](#breaking-changes), as well as the removal of some previously deprecated features. See [the Lunaria changelog](https://github.com/lunariajs/lunaria/blob/main/packages/core/CHANGELOG.md) for full release notes.
+
+## Breaking Changes
+
+### New configuration file format
+
+Lunaria was previously configured with a `lunaria.config.json` file. 
+
+Lunaria v0.2 replaces it with a JavaScript or TypeScript configuration file, allowing you to use functions (e.g. for the [renderer](#changed-renderer-is-now-part-of-the-configuration) and [integrations](/reference/configuration/#integrations)) and to get IntelliSense support through the `defineConfig()` helper instead of the JSON Schema.
+
+As a consequence, the `$schema` property and the `config.schema.json` file shipped with `@lunariajs/core` have been removed.
+
+#### What should I do?
+
+<Steps>
+1. Create a new `lunaria.config.mjs` file at the root of your project, wrapping your existing configuration with `defineConfig()`:
+
+    ```json title="lunaria.config.json" del={1-8}
+    {
+      "$schema": "./node_modules/@lunariajs/core/config.schema.json",
+      "repository": {
+        "name": "me/cool-docs"
+      },
+      "defaultLocale": { "label": "English", "lang": "en" },
+      "locales": [{ "label": "Português", "lang": "pt" }]
+    }
+    ```
+
+    ```js title="lunaria.config.mjs" ins={1-9}
+    import { defineConfig } from '@lunariajs/core/config';
+
+    export default defineConfig({
+      repository: {
+        name: 'me/cool-docs',
+      },
+      sourceLocale: { label: 'English', lang: 'en' },
+      locales: [{ label: 'Português', lang: 'pt' }],
+    });
+    ```
+
+2. Update the properties that were [renamed or restructured](#renamed-defaultlocale-is-now-sourcelocale) in v0.2, as described in the sections below.
+
+3. Delete your `lunaria.config.json` file. If you were using the [`--config` CLI option](/reference/cli/#--config-path), update it to point to the new file.
+</Steps>
+
+### Renamed: `defaultLocale` is now `sourceLocale`
+
+The `defaultLocale` configuration property has been renamed to `sourceLocale` to better describe its purpose as the locale of the source content that is going to be localized.
+
+#### What should I do?
+
+Rename the `defaultLocale` property in your Lunaria configuration:
+
+```js title="lunaria.config.mjs" del={4} ins={5}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  defaultLocale: { label: 'English', lang: 'en' },
+  sourceLocale: { label: 'English', lang: 'en' },
+});
+```
+
+### Changed: `files` entries use `include` and `exclude`
+
+The `location` and `ignore` properties of each `files` entry have been renamed to `include` and `exclude`, respectively. `include` now expects an array of glob patterns instead of a single string.
+
+In Lunaria v0.1, `location` had to match the files of every locale. In v0.2, `include` should match only the **source** files, and the paths of their localizations are inferred from the `pattern` instead. Any localized file matched by `include` is ignored with a warning.
+
+#### What should I do?
+
+Rename `location` to `include` and `ignore` to `exclude` in every `files` entry, and narrow your globs to your source files:
+
+```js title="lunaria.config.mjs" del={6,9} ins={7,10}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  files: [
+    {
+      location: 'src/content/docs/**/*.mdx',
+      include: ['src/content/docs/en/**/*.mdx'],
+      pattern: 'src/content/docs/@lang/@path',
+      ignore: ['src/content/docs/**/old.mdx'],
+      exclude: ['src/content/docs/**/old.mdx'],
+      type: 'universal',
+    },
+  ],
+});
+```
+
+### Changed: `@lang` is required in patterns
+
+In Lunaria v0.1, the `@lang` placeholder of a `pattern` was optional, allowing a single pattern to match both source files without a locale directory (e.g. `src/content/docs/guide.mdx`) and localized files with one (e.g. `src/content/docs/pt/guide.mdx`).
+
+In Lunaria v0.2, `@lang` strictly matches the `lang` of your locales. Projects where the source and localized files follow different structures must use the new `pattern` object with separate `source` and `locales` patterns. 
+
+The `@locales` placeholder has also been removed.
+
+#### What should I do?
+
+If your source files don't include the locale in their path, replace the `pattern` string with an object:
+
+```js title="lunaria.config.mjs" del={7} ins={8-11}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  files: [
+    {
+      include: ['src/content/docs/**/*.mdx'],
+      pattern: 'src/content/docs/@lang/@path',
+      pattern: {
+        source: 'src/content/docs/@path',
+        locales: 'src/content/docs/@lang/@path',
+      },
+      type: 'universal',
+    },
+  ],
+});
+```
+
+Read more about [different source and localized paths](/guides/tracking/#different-source-and-localized-paths) in the tracking guide.
+
+### Changed: `optionalKeys` format
+
+In Lunaria v0.1, the `optionalKeys` property of `dictionary` file entries was a record of shared paths with an array of top-level keys to be considered optional.
+
+In Lunaria v0.2, `optionalKeys` applies to every file matched by the entry and mirrors the structure of your dictionaries: a key set to `true` is optional, including any keys nested inside of it. This allows nested keys to be optional now that [key completion is checked for nested keys](#changed-dictionary-key-completion-checks-nested-keys) as well.
+
+#### What should I do?
+
+Convert the arrays of keys into an object with the keys set to `true`. If different files of the same entry had different optional keys, split them into separate `files` entries:
+
+```js title="lunaria.config.mjs" del={9-12} ins={13-16}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  files: [
+    {
+      include: ['ui/en/nav.json'],
+      pattern: 'ui/@lang/@path',
+      type: 'dictionary',
+      optionalKeys: {
+        'ui/nav.json': ['footer', 'sidebar'],
+        'ui/ui.yml': ['search'],
+      },
+      optionalKeys: {
+        footer: true,
+        sidebar: true,
+      },
+    },
+  ],
+});
+```
+
+### Moved: `ignoreKeywords` and `localizableProperty` into `tracking`
+
+The `ignoreKeywords` and `localizableProperty` top-level properties have been moved into a new `tracking` object, with `ignoreKeywords` also renamed to `ignoredKeywords`.
+
+#### What should I do?
+
+Move both properties into `tracking` and rename `ignoreKeywords`:
+
+```js title="lunaria.config.mjs" del={4-5} ins={6-9}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  ignoreKeywords: ['i18nIgnore', 'en-only'],
+  localizableProperty: 'i18nReady',
+  tracking: {
+    ignoredKeywords: ['i18nIgnore', 'en-only'],
+    localizableProperty: 'i18nReady',
+  },
+});
+```
+
+### Changed: `renderer` is now part of the configuration
+
+In Lunaria v0.1, the `renderer` property was the path to a separate `renderer.config.(c/m)js` or `renderer.config.(c/m)ts` file. 
+
+Since the Lunaria configuration is now a JavaScript module, `renderer` receives the renderer configuration object directly.
+
+#### What should I do?
+
+Move your renderer configuration into the `renderer` property of your Lunaria configuration, or import your existing renderer file into it:
+
+```js title="lunaria.config.mjs" del={5} ins={2,6}
+import { defineConfig } from '@lunariajs/core/config';
+import renderer from './renderer.config.mjs';
+
+export default defineConfig({
+  renderer: './renderer.config.mjs',
+  renderer,
+});
+```
+
+Read more about the [`defineRendererConfig()` helper](/reference/renderer/#definerendererconfig) in the Renderer API reference.
+
+### Changed: renderer components receive the new status format
+
+The `status` parameter passed to `overrides` components (`body`, `statusByLocale`, and `statusByFile`) follows the [new status format](#changed-status-format). Each entry now exposes its source file as `source` and its localizations as an array, instead of `sharedPath`, `sourceFile`, and a `localizations` record keyed by locale.
+
+#### What should I do?
+
+Update your custom components to read from the new properties:
+
+```js title="lunaria.config.mjs" del={6} ins={7}
+import { html } from '@lunariajs/core';
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  renderer: {
+    overrides: {
+      body: (config, status) => html`<ul>${status.map((s) => html`<li>${s.sharedPath}</li>`)}</ul>`,
+      body: (config, status) => html`<ul>${status.map((entry) => html`<li>${entry.source.path}</li>`)}</ul>`,
+    },
+  },
+});
+```
+
+### Changed: shallow repositories are no longer cloned automatically
+
+In Lunaria v0.1, running in a shallow repository (e.g. the default checkout of most CI environments) made Lunaria clone the full git history of your repository into the `cloneDir` directory.
+
+In Lunaria v0.2, Lunaria fails with an error when the repository is shallow, since the missing history would produce an inaccurate status. 
+
+Deployments on Netlify and Vercel are detected and have their missing git data fetched automatically. 
+
+#### What should I do?
+
+Ensure the full git history is available wherever you run Lunaria. On GitHub Actions, set `fetch-depth: 0` in the checkout step:
+
+```yml title=".github/workflows/lunaria.yml" ins={4-5}
+- name: Checkout
+  uses: actions/checkout@v7
+  with:
+    # Makes the action clone the entire git history
+    fetch-depth: 0
+```
+
+On other platforms, run `git fetch --unshallow` before building your dashboard.
+
+### Removed: frontmatter dictionaries
+
+In Lunaria v0.1, `dictionary` file entries supported Markdown, MDX, and Markdoc files, using their frontmatter as the dictionary.
+
+Lunaria v0.2 no longer supports these formats as dictionaries. YAML dictionaries are now parsed as whole YAML documents, and [gettext `.po` and `.pot` files](/reference/configuration/#dictionary) are now supported.
+
+#### What should I do?
+
+Track Markdown, MDX, and Markdoc files using the `universal` type instead, or move the localized values into a JSON, YAML, or JavaScript/TypeScript dictionary:
+
+```js title="lunaria.config.mjs" del={8} ins={9}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  files: [
+    {
+      include: ['src/content/docs/en/**/*.mdx'],
+      pattern: 'src/content/docs/@lang/@path',
+      type: 'dictionary',
+      type: 'universal',
+    },
+  ],
+});
+```
+
+### Changed: dictionary key completion checks nested keys
+
+In Lunaria v0.1, only the top-level keys of a dictionary were compared to check if a localization was complete. 
+
+Lunaria v0.2 compares every nested key, and missing keys are listed in the dashboard as dot-separated paths, e.g. `nav.home`.
+
+#### What should I do?
+
+No changes are required, but localizations with missing nested keys that were previously considered done will now be marked as outdated. Update the localizations or mark the keys as optional with [`optionalKeys`](#changed-optionalkeys-format).
+
+### Removed: `@tracker-major` and `@tracker-minor` directives
+
+The `@tracker-major` and `@tracker-minor` tracker directives, deprecated in Lunaria v0.1.0, have been removed.
+
+#### What should I do?
+
+Use the `@lunaria-track` and `@lunaria-ignore` directives instead in new commits. Previous commits using the removed directives will be considered as regular commits, which may change the status of the files they affect.
+
+Read more about [tracker directives](/guides/tracking/#triggering-changes-per-file) in the tracking guide.
+
+### Removed: `lunaria sync`
+
+The `lunaria sync` command, which filled the `defaultLocale`, `locales`, and `files` fields based on your Starlight or VitePress configuration, has been removed along with its `--package` and `--skip-questions` options.
+
+#### What should I do?
+
+Set the `sourceLocale`, `locales`, and `files` fields of your configuration manually, following the [Configuration Reference](/reference/configuration/). 
+
+Since the configuration is now a JavaScript module, you can also import and reuse values from your framework's configuration file, or write an [integration](/reference/configuration/#integrations) to set them automatically for you.
+
+### Removed: `lunaria stdout`
+
+The `lunaria stdout` command, which logged your configuration and status in the console, has been removed.
+
+#### What should I do?
+
+Use the [Runtime API](/reference/runtime/) to get your configuration and status programmatically:
+
+```ts
+import { createLunaria } from '@lunariajs/core';
+
+const lunaria = await createLunaria();
+const status = await lunaria.getFullStatus();
+```
+
+### Removed: `--skip-status` build option
+
+The `--skip-status` option of `lunaria build` has been removed. 
+
+Lunaria v0.2 caches the git data of your tracked files between builds in the [`cacheDir`](/reference/configuration/#cachedir) directory, so rebuilding your dashboard is fast without skipping the status.
+
+#### What should I do?
+
+Remove the `--skip-status` option from your scripts. To ignore the cache and build the status from scratch, use the new [`--force`](/reference/cli/#--force) option:
+
+```json title="package.json" del={2} ins={3}
+"scripts": {
+  "lunaria:rebuild": "lunaria build --skip-status",
+  "lunaria:rebuild": "lunaria build --force",
+}
+```
+
+### Changed: status format
+
+The `status.json` file written by `lunaria build` and the status returned by the Runtime API follow a new format. Each entry now contains the matching `files` entry properties, a `source` object, and an array of `localizations` with a `status` of `'up-to-date'`, `'outdated'`, or `'missing'`.
+
+The git data of each file is available as `git.latestCommit` and `git.latestTrackedCommit`, replacing `lastChange`, `lastMajorChange`, and the other `lastMajor*` properties. 
+
+The `gitHostingFileURL` and `gitHostingHistoryURL` properties are no longer part of the status.
+
+```json title="status.json" del={1-19} ins={20-44}
+{
+  "sharedPath": "src/content/docs/guide.mdx",
+  "sourceFile": {
+    "lang": "en",
+    "path": "src/content/docs/en/guide.mdx",
+    "git": { "lastMajorChange": "2024-01-01T00:00:00.000Z" },
+    "gitHostingFileURL": "https://github.com/me/cool-docs/blob/main/src/content/docs/en/guide.mdx"
+  },
+  "localizations": {
+    "pt": {
+      "lang": "pt",
+      "path": "src/content/docs/pt/guide.mdx",
+      "isMissing": false,
+      "isOutdated": true,
+      "git": { "lastMajorChange": "2023-12-01T00:00:00.000Z" },
+      "meta": { "type": "universal" }
+    }
+  }
+}
+{
+  "include": ["src/content/docs/en/**/*.mdx"],
+  "pattern": "src/content/docs/@lang/@path",
+  "type": "universal",
+  "source": {
+    "lang": "en",
+    "path": "src/content/docs/en/guide.mdx",
+    "git": {
+      "latestCommit": { "date": "2024-01-01T00:00:00.000Z", "message": "Update guide" },
+      "latestTrackedCommit": { "date": "2024-01-01T00:00:00.000Z", "message": "Update guide" }
+    }
+  },
+  "localizations": [
+    {
+      "lang": "pt",
+      "path": "src/content/docs/pt/guide.mdx",
+      "status": "outdated",
+      "type": "universal",
+      "git": {
+        "latestCommit": { "date": "2023-12-01T00:00:00.000Z", "message": "Add guide" },
+        "latestTrackedCommit": { "date": "2023-12-01T00:00:00.000Z", "message": "Add guide" }
+      }
+    }
+  ]
+}
+```
+
+#### What should I do?
+
+Update any scripts or integrations reading `status.json` or the Runtime API status to the new format. 
+
+Git hosting links can be generated with the [`gitHostingLinks()` method](/reference/runtime/#githostinglinks) of a `Lunaria` instance.
+
+### Changed: Runtime API
+
+The `lunaria()` function, which returned the localization status for a configuration object, has been replaced by `createLunaria()`, which returns a `Lunaria` instance with methods to get the status of all or individual files.
+
+#### What should I do?
+
+Replace calls to `lunaria()` with `createLunaria()` followed by `getFullStatus()`:
+
+```ts del={1,4} ins={2,5-6}
+import { lunaria } from '@lunariajs/core';
+import { createLunaria } from '@lunariajs/core';
+
+const status = await lunaria(config);
+const lunaria = await createLunaria({ config });
+const status = await lunaria.getFullStatus();
+```
+
+The `config` is optional. When omitted, `createLunaria()` loads your `lunaria.config.*` file automatically.

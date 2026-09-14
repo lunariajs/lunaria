@@ -14,7 +14,7 @@
 
 ## Status
 
-Lunaria is currently in public beta and **breaking changes** are bound to happen. If you’ve found anything wrong or unexpected, please [open an issue on GitHub](https://github.com/yanthomasdev/lunaria/issues/new).
+Lunaria is currently in public beta and **breaking changes** are bound to happen. If you’ve found anything wrong or unexpected, please [open an issue on GitHub](https://github.com/lunariajs/lunaria/issues/new).
 
 ## Documentation
 
@@ -25,7 +25,6 @@ Read the official [Lunaria documentation](https://lunaria.dev) to learn more and
 | Package | Release Notes |
 |---|---|
 | [@lunariajs/core](/packages/core) | [![@lunariajs/core version](https://img.shields.io/npm/v/@lunariajs/core.svg?label=%20)](packages/core/CHANGELOG.md) |
-| [@lunariajs/starlight](/packages/starlight) | [![@lunariajs/starlight version](https://img.shields.io/npm/v/@lunariajs/starlight.svg?label=%20)](packages/starlight/CHANGELOG.md) |
 
 
 ## Sponsors

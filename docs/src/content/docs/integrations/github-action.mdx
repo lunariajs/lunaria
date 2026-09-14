@@ -10,7 +10,7 @@ The Lunaria GitHub Action comments on pull requests with an overview of how the 
 ## Prerequisites
 
 - Node.js - `v20.0.0` or higher.
-- `@lunariajs/core` - `v0.1.0` or higher.
+- `@lunariajs/core` - `v0.2.0` or higher.
 
 ## Set up the Action
 
@@ -41,22 +41,22 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Necessary for Lunaria to work properly
           # Makes the action clone the entire git history
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm install
 
       - name: Generate Lunaria Overview
-        uses: yanthomasdev/lunaria-action@v0.1.0
+        uses: lunariajs/action@v0.2.0
 ```
 
 </TabItem>
@@ -84,25 +84,25 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Necessary for Lunaria to work properly
           # Makes the action clone the entire git history
           fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
       - name: Setup PNPM
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
 
       - run: pnpm install
 
       - name: Generate Lunaria Overview
-        uses: yanthomasdev/lunaria-action@v0.1.0
+        uses: lunariajs/action@v0.2.0
 ```
 
 </TabItem>
@@ -130,22 +130,22 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Necessary for Lunaria to work properly
           # Makes the action clone the entire git history
           fetch-depth: 0
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
           cache: yarn
 
       - run: yarn install
 
       - name: Generate Lunaria Overview
-        uses: yanthomasdev/lunaria-action@v0.1.0
+        uses: lunariajs/action@v0.2.0
 ```
 
 </TabItem>
@@ -167,7 +167,7 @@ This example assumes the `@lunariajs/core` package was installed in the `docs/pa
 
 ```yml ins={4} mark="docs"
 - name: Generate Lunaria Overview
-  uses: yanthomasdev/lunaria-action@v0.1.0
+  uses: lunariajs/action@v0.2.0
   with:
     working-directory: docs
 ```
@@ -183,7 +183,7 @@ By default, the Action won't run on a private repository for a lack of permissio
 
    ```yml ins={7} mark="PAT"
    - name: Checkout
-       uses: actions/checkout@v4
+       uses: actions/checkout@v7
        with:
          # Necessary for Lunaria to work properly
          # Makes the action clone the entire git history
@@ -193,7 +193,7 @@ By default, the Action won't run on a private repository for a lack of permissio
 
    ```yml ins={4} mark="PAT"
    - name: Generate Lunaria Overview
-     uses: yanthomasdev/lunaria-action@v0.1.0
+     uses: lunariajs/action@v0.2.0
      with:
        token: ${{ secrets.PAT }}
    ```
@@ -208,7 +208,7 @@ By default, the Action won't run on a private repository for a lack of permissio
 
   ```yml mark={4}
   - name: Generate Lunaria Overview
-    uses: yanthomasdev/lunaria-action@v0.1.0
+    uses: lunariajs/action@v0.2.0
     with:
       token: ${{ secrets.PAT }}
   ```
@@ -217,7 +217,7 @@ By default, the Action won't run on a private repository for a lack of permissio
 
   ```yml mark={4}
   - name: Generate Lunaria Overview
-    uses: yanthomasdev/lunaria-action@v0.1.0
+    uses: lunariajs/action@v0.2.0
     with:
       working-directory: docs
   ```

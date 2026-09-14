@@ -44,8 +44,8 @@ export default defineConfig({
 	],
 	dashboard: {
 		title: 'Starlight Example Localization Status',
-    basesToHide: ['src/content/docs/', 'src/content/i18n/'],
-  },
+		basesToHide: ['src/content/docs/', 'src/content/i18n/'],
+	},
 	tracking: {
 		localizableProperty: 'i18nReady',
 		ignoredKeywords: [
