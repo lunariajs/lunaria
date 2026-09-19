@@ -9,9 +9,6 @@ jobs:
     steps:
       - name: Check out code using Git
         uses: actions/checkout@v7
-        with:
-          token: ${{ secrets.PAT }}
-          ref: ${{ github.head_ref }}
 
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
