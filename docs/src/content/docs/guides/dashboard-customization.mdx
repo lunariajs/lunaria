@@ -14,24 +14,28 @@ By default, Lunaria will add a default title and description for your dashboard.
 <Steps>
 1. Add the [`dashboard.title`](/reference/configuration/#dashboardtitle) option to your Lunaria config. The defined title will also be shown in the dashboard's heading:
 
-    ```json title="lunaria.config.json" add={2-4}
-    {
-      "dashboard": {
-        "title": "Lunaria Localization Status"
-      }
-    }
+    ```js title="lunaria.config.mjs" add={4-6}
+    import { defineConfig } from '@lunariajs/core/config';
+
+    export default defineConfig({
+      dashboard: {
+        title: 'Lunaria Localization Status',
+      },
+    });
     ```
 
 2. Add the [`dashboard.description`](/reference/configuration/#dashboarddescription) option to your Lunaria config:
 
-   ```json title="lunaria.config.json" add={4}
-    {
-      "dashboard": {
-        "title": "Lunaria Localization Status",
-        "description": "Localization status dashboard for the Lunaria project."
-      }
-    }
-   ```
+    ```js title="lunaria.config.mjs" add={6}
+    import { defineConfig } from '@lunariajs/core/config';
+
+    export default defineConfig({
+      dashboard: {
+        title: 'Lunaria Localization Status',
+        description: 'Localization status dashboard for the Lunaria project.',
+      },
+    });
+    ```
 </Steps>
 
 ## Canonical URL
@@ -40,12 +44,14 @@ If you desire to publicize different versions of your dashboard (e.g. localized 
 
 To add a canonical URL, you can set [`dashboard.site`](/reference/configuration/#dashboardsite) in your Lunaria configuration file: 
 
-```json title="lunaria.config.json" add={3}
-{
-  "dashboard": {
-    "site": "https://localization.lunaria.dev/"
-  }
-}
+```js title="lunaria.config.mjs" add={5}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  dashboard: {
+    site: 'https://localization.lunaria.dev/',
+  },
+});
 ```
 
 ## Favicons
@@ -62,23 +68,25 @@ Currently, [not all browsers support SVG favicons](https://caniuse.com/link-icon
 
 External favicons are favicons you load through another URL as a resource. You can add them in the `external` property of [`dashboard.favicon`](/reference/configuration/#dashboardfavicon). The example below adds both `.svg` and `.ico` favicons.
 
-```json title="lunaria.config.json" add={4-13}
-{
-  "dashboard": {
-    "favicon": {
-      "external": [
+```js title="lunaria.config.mjs" add={6-15}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  dashboard: {
+    favicon: {
+      external: [
         {
-          "link": "https://lunaria.dev/favicon.svg",
-          "type": "image/svg+xml"
+          link: 'https://lunaria.dev/favicon.svg',
+          type: 'image/svg+xml',
         },
         {
-          "link": "https://lunaria.dev/favicon.ico",
-          "type": "image/x-icon"
+          link: 'https://lunaria.dev/favicon.ico',
+          type: 'image/x-icon',
         },
-      ]
-    }
-  }
-}
+      ],
+    },
+  },
+});
 ```
 
 ### Inline favicon
@@ -92,19 +100,21 @@ An inline favicon is a local [`.svg` favicon appended to your dashboard through 
    - src/
      - assets/
        - **favicon.svg**
-   - lunaria.config.json
+   - lunaria.config.mjs
    </FileTree>
 
 2. Add the path to your favicon as the `inline` property of [`dashboard.favicon`](/reference/configuration/#dashboardfavicon) in your Lunaria config:
 
-    ```json title="lunaria.config.json" add={4}
-    {
-      "dashboard": {
-        "favicon": {
-          "inline": "./src/assets/favicon.svg"
-        }
-      }
-    }
+    ```js title="lunaria.config.mjs" add={6}
+    import { defineConfig } from '@lunariajs/core/config';
+
+    export default defineConfig({
+      dashboard: {
+        favicon: {
+          inline: './src/assets/favicon.svg',
+        },
+      },
+    });
     ```
 </Steps>
 
@@ -114,12 +124,14 @@ The dashboard contains several paths as links to your source and localized conte
 
 To do so, you can set the [`dashboard.basesToHide`](/reference/configuration/#dashboardbasestohide) option in your Lunaria config with all the desired path bases to hide. This example assumes you're tracking content files that start at `src/content/docs/` or `src/i18n/`:
 
-```json title="lunaria.config.json" add={3}
-{
-  "dashboard": {
-    "basesToHide": ["src/content/docs/", "src/i18n/"]
-  }
-}
+```js title="lunaria.config.mjs" add={5}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  dashboard: {
+    basesToHide: ['src/content/docs/', 'src/i18n/'],
+  },
+});
 ```
 
 With this, references to paths like `src/content/docs/guide.mdx` and `src/i18n/dictionary.ts` will be shortened to their unique parts, namely `guide.mdx` and `dictionary.ts`.
@@ -140,17 +152,19 @@ The dashboard can be further customized by adding your own custom CSS, allowing 
 
 2. Add the path to your CSS file to your Lunaria config's [`dashboard.customCss`](/reference/configuration/#dashboardcustomcss) array property:
 
-    ```json title="lunaria.config.json" add={3}
-    {
-      "dashboard": {
-        "customCss": ["./src/styles/lunaria.css"]
-      }
-    }
+    ```js title="lunaria.config.mjs" add={5}
+    import { defineConfig } from '@lunariajs/core/config';
+
+    export default defineConfig({
+      dashboard: {
+        customCss: ['./src/styles/lunaria.css'],
+      },
+    });
     ```
 </Steps>
 
 :::tip
-Check out the Lunaria repository to see [all the available CSS custom properties set by Lunaria and its implementation](https://github.com/yanthomasdev/lunaria/blob/main/packages/core/src/dashboard/styles.ts). 
+Check out the Lunaria repository to see [all the available CSS custom properties set by Lunaria and its implementation](https://github.com/lunariajs/lunaria/blob/main/packages/core/src/dashboard/styles.ts). 
 :::
 
 ## Custom labels and language
@@ -161,14 +175,16 @@ By default, Lunaria's dashboard comes with UI labels written in English. These U
 
 For example, you can change the default message shown when a locale's localization is 100% complete by changing the `statusByLocale.completeLocalization` property of [`dashboard.ui`](/reference/configuration/#dashboardui):
 
-```json title="lunaria.config.json" add={4}
-{
-  "dashboard": {
-    "ui": {
-      "statusByLocale.completeLocalization": "No missing or outdated changes found, congratulations!"  
-    }
-  }
-}
+```js title="lunaria.config.mjs" add={6}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  dashboard: {
+    ui: {
+      'statusByLocale.completeLocalization': 'No missing or outdated changes found, congratulations!',
+    },
+  },
+});
 ```
 
 :::tip
@@ -179,22 +195,24 @@ Check the reference section about [`dashboard.ui`](/reference/configuration/#das
 
 Some labels, suffixed with `Format` in their name, come with named `{}` blocks that are going to be dynamically replaced with values from other UI labels or from the internal context, for example:
 
-```json
-"statusByLocale.detailsTitleFormat": "{locale_name} ({locale_tag})",
+```js
+'statusByLocale.detailsTitleFormat': '{locale_name} ({locale_tag})',
 ```
 
 These can also be changed, though it is highly recommended to not remove any of the `{}` blocks present by default, as that would mean possibly not inserting a dynamic value that was expected. 
 
 For example, you could modify your dashboard to show the language details' summary from the format `Deutsch (de)` to `Deutsch - de` by making a small change in the default `statusByLocale.detailsTitleFormat` value:
 
-```json title="lunaria.config.json" add={4}
-{
-  "dashboard": {
-    "ui": {
-      "statusByLocale.detailsTitleFormat": "{locale_name} - {locale_tag}",
-    }
-  }
-}
+```js title="lunaria.config.mjs" add={6}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  dashboard: {
+    ui: {
+      'statusByLocale.detailsTitleFormat': '{locale_name} - {locale_tag}',
+    },
+  },
+});
 ```
 
 ### `lang` and `dir`
@@ -203,16 +221,18 @@ Since all labels can be changed, there is no imposition from completely translat
 
 For example, that's how you could go about changing your dashboard's language to Brazilian Portuguese (most properties have been omitted from this example for simplicity's sake):
 
-```json title="lunaria.config.json" add={4-6}
-{
-  "dashboard": {
-    "ui": {
-      "lang": "pt-BR",
-      "statusByFile.heading": "Estado da localização por arquivo",
-      "statusByFile.tableRowFile": "Arquivo",
-    }
-  }
-}
+```js title="lunaria.config.mjs" add={6-8}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  dashboard: {
+    ui: {
+      lang: 'pt-BR',
+      'statusByFile.heading': 'Estado da localização por arquivo',
+      'statusByFile.tableRowFile': 'Arquivo',
+    },
+  },
+});
 ```
 
 ## Custom UI elements
@@ -220,24 +240,22 @@ For example, that's how you could go about changing your dashboard's language to
 Lunaria's dashboard was designed to be flexible and easily customizable through [custom CSS](#custom-css) and the available [configuration options](/reference/configuration/#dashboard-options). When that's not enough, Lunaria allows you to extend and override your dashboard's UI using its [Renderer API](/reference/renderer/). 
 
 <Steps>
-1. Add a new `renderer.config.ts` or `renderer.config.js` file to your project with the following content:
+1. Add the [`renderer`](/reference/configuration/#renderer) configuration property to your Lunaria config:
 
-    ```ts title="renderer.config.ts"
-    import { defineRendererConfig } from '@lunariajs/core';
+    ```js title="lunaria.config.mjs" add={4-6}
+    import { defineConfig } from '@lunariajs/core/config';
 
-    export default defineRendererConfig({
-      // options will go here...
+    export default defineConfig({
+      renderer: {
+        // options will go here...
+      },
     });
     ```
-
-2. Add the path to your renderer file to your Lunaria config's [`renderer`](/reference/configuration/#renderer) configuration property:
-
-    ```json title="lunaria.config.json" add={2}
-    {
-      "renderer": "./renderer.config.ts"
-    }
-    ```
 </Steps>
+
+:::tip
+If you prefer to keep your renderer configuration in a separate file, write it using the [`defineRendererConfig()` helper](/reference/renderer/#definerendererconfig) and import it into the `renderer` property of your main Lunaria configuration.
+:::
 
 ### Custom components
 
@@ -249,7 +267,7 @@ You can get syntax highlighting and language support inside `html` using the [`l
 
 A component in Lunaria is a function that receives a few parameters and returns a string of HTML:
 
-```ts title="example-component.ts"
+```js title="example-component.mjs"
 import { html } from '@lunariajs/core';
 
 const CustomParagraph = () => html`<p>This is my custom paragraph component!</p>`;
@@ -257,12 +275,12 @@ const CustomParagraph = () => html`<p>This is my custom paragraph component!</p>
 
 Since these components are [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals), you can interpolate values using the `${}` notation as you normally would in JavaScript:
 
-```ts title="interpolating-value.ts"
+```js title="interpolating-value.mjs"
 import { html } from '@lunariajs/core';
 
 const favoriteColor = "red";
 
-const ColorComponent = () => html`<p>My favorite color is ${favoriteColor}!</p>`.
+const ColorComponent = () => html`<p>My favorite color is ${favoriteColor}!</p>`;
 ```
 
 <details>
@@ -274,12 +292,12 @@ const ColorComponent = () => html`<p>My favorite color is ${favoriteColor}!</p>`
 
 You can also interpolate over lists of values (e.g. arrays) using the `.map()` method:
 
-```ts title="interpolating-list.ts"
+```js title="interpolating-list.mjs"
 import { html } from '@lunariajs/core';
 
 const catColors = ["grey", "white", "black", "orange", "buff"];
 
-const CatColorsList = () => html`<ul>${catColors.map((catColor) => html`<li>${catColor}</li>`)}</ul>`
+const CatColorsList = () => html`<ul>${catColors.map((catColor) => html`<li>${catColor}</li>`)}</ul>`;
 ```
 
 <details>
@@ -306,25 +324,31 @@ Elements can be slotted into the dashboard with the [renderer's `slots` property
 <Steps>
 1. Create a new component using the `html` tagged template. In this case, a `"robots"` [meta tag](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta) with the `"noindex"` content to avoid indexing the dashboard in search engines:
 
-    ```ts title="renderer.config.ts" add={3}
-    import { defineRendererConfig, html } from '@lunariajs/core';
+    ```js title="lunaria.config.mjs" add={1, 4}
+    import { html } from '@lunariajs/core';
+    import { defineConfig } from '@lunariajs/core/config';
 
     const NoIndex = () => html`<meta name="robots" content="noindex" />`;
 
-    export default defineRendererConfig({});
+    export default defineConfig({
+      renderer: {},
+    });
     ```
 
 2. Add the created component to one of the available slots in the [`slots` property](/reference/renderer/#slots). Here, the `head` slot will be used to insert the component into the dashboard's [`<head>` element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/head):
 
-    ```ts title="renderer.config.ts" add={6-8}
-    import { defineRendererConfig, html } from '@lunariajs/core';
+    ```js title="lunaria.config.mjs" add={8-10}
+    import { html } from '@lunariajs/core';
+    import { defineConfig } from '@lunariajs/core/config';
 
     const NoIndex = () => html`<meta name="robots" content="noindex" />`;
 
-    export default defineRendererConfig({
-      slots: {
-        head: NoIndex,
-      }
+    export default defineConfig({
+      renderer: {
+        slots: {
+          head: NoIndex,
+        },
+      },
     });
     ```
 </Steps>
@@ -334,27 +358,33 @@ Elements can be slotted into the dashboard with the [renderer's `slots` property
 Elements can also be overridden in the dashboard with the [renderer's `overrides` property](/reference/renderer/#overrides). All components added to `overrides` will be passed a copy of your Lunaria configuration, as well as the generated Lunaria status (except for the `meta` property) you can use to get values from:
 
 <Steps>
-1. Create a new component using the `html` tagged template. In this case, the component will override the dashboard's body and show the `sharedPath` for each localized content:
+1. Create a new component using the `html` tagged template. In this case, the component will override the dashboard's body and show the source path of each tracked file:
     
-    ```ts title="renderer.config.ts" add={3}
-    import { defineRendererConfig, html } from '@lunariajs/core';
+    ```js title="lunaria.config.mjs" add={1, 4}
+    import { html } from '@lunariajs/core';
+    import { defineConfig } from '@lunariajs/core/config';
 
-    const NewBody = (config, status) => html`<ul>${status.map((s) => html`<li>${s.sharedPath}</li>`)}</ul>`;
+    const NewBody = (config, status) => html`<ul>${status.map((entry) => html`<li>${entry.source.path}</li>`)}</ul>`;
 
-    export default defineRendererConfig({});
+    export default defineConfig({
+      renderer: {},
+    });
     ```
 
 2. Add the created component to one of the available overrides in the [`overrides` property](/reference/renderer/#overrides). Here, the `body` slot will be used to insert the component and override everything inside the dashboard's [`<body>` element](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body):
     
-    ```ts title="renderer.config.ts" add={6-8}
-    import { defineRendererConfig, html } from '@lunariajs/core';
+    ```js title="lunaria.config.mjs" add={8-10}
+    import { html } from '@lunariajs/core';
+    import { defineConfig } from '@lunariajs/core/config';
 
-    const NewBody = (config, status) => html`<ul>${status.map((s) => html`<li>${s.sharedPath}</li>`)}</ul>`;
+    const NewBody = (config, status) => html`<ul>${status.map((entry) => html`<li>${entry.source.path}</li>`)}</ul>`;
 
-    export default defineRendererConfig({
-      overrides: {
-        body: NewBody,
-      }
+    export default defineConfig({
+      renderer: {
+        overrides: {
+          body: NewBody,
+        },
+      },
     });
     ```
 </Steps>

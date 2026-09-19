@@ -1,25 +1,26 @@
-import pc from 'picocolors';
-import type { CLI } from '../types.js';
+import { colors } from 'consola/utils';
+import { logger } from '../console.ts';
+import type { CLI } from '../types.ts';
 
 export function help(cli: CLI, command?: string) {
 	const output = [];
 
 	const linebreak = () => '';
-	const title = (label: string) => ` ${pc.bgYellow(pc.black(` ${label} `))} `;
+	const title = (label: string) => ` ${colors.bgYellow(colors.black(` ${label} `))} `;
 
 	const existingCommand = cli.commands.find((cmd) => cmd.name === command);
 
 	if (existingCommand) {
 		const { name, usage } = existingCommand;
 
-		output.push(linebreak(), `  ${pc.magenta(`lunaria ${name}`)} ${pc.bold(usage)}`);
+		output.push(linebreak(), `  ${colors.magenta(`lunaria ${name}`)} ${colors.bold(usage)}`);
 
 		const optionEntries: Array<[string, string]> | undefined = existingCommand.options?.map(
-			(opt) => [opt.name, opt.description]
+			(opt) => [opt.name, opt.description],
 		);
 
 		if (optionEntries) {
-			const padding = Math.max(...[optionEntries].map((rows) => calculateTablePadding(rows)));
+			const padding = calculateTablePadding(optionEntries);
 
 			output.push(linebreak(), title('Options'), linebreak(), table(optionEntries, { padding }));
 		}
@@ -28,10 +29,13 @@ export function help(cli: CLI, command?: string) {
 	} else {
 		output.push(
 			linebreak(),
-			` ${pc.bgYellow(pc.black(` Lunaria `))} Supercharge your localization workflow.`
+			` ${colors.bgYellow(colors.black(' Lunaria '))} Supercharge your localization workflow.`,
 		);
 
-		output.push(linebreak(), `   ${pc.magenta('lunaria')} ${pc.bold(`[command] [...options]`)}`);
+		output.push(
+			linebreak(),
+			`   ${colors.magenta('lunaria')} ${colors.bold('[command] [...options]')}`,
+		);
 
 		const commandEntries: Array<[string, string]> = cli.commands.map((command) => [
 			command.name,
@@ -51,11 +55,11 @@ export function help(cli: CLI, command?: string) {
 			linebreak(),
 			title('Global Options'),
 			linebreak(),
-			table(optionEntries, { padding })
+			table(optionEntries, { padding }),
 		);
 	}
 
-	console.log(output.join('\n') + '\n');
+	logger.log(`${output.join('\n')}\n`);
 }
 
 function calculateTablePadding(rows: [string, string][]) {
@@ -70,9 +74,9 @@ function table(rows: [string, string][], { padding }: { padding: number }) {
 		if (split) {
 			raw += `    ${row[0]}\n    `;
 		} else {
-			raw += `${`${row[0]}`.padStart(padding)}`;
+			raw += `${row[0]}`.padStart(padding);
 		}
-		raw += '  ' + pc.dim(row[1]) + '\n';
+		raw += `  ${colors.dim(row[1])}\n`;
 	}
 
 	return raw.slice(0, -1); // Remove latest \n

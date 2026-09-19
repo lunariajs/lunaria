@@ -1,6 +1,6 @@
 ---
-import type { ImageMetadata } from 'astro';
 import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 import MediaCard from './MediaCard.astro';
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
 const { href, title } = Astro.props;
 
 const thumbnails = import.meta.glob<{ default: ImageMetadata }>(
-	'../assets/showcase/*{.png,.jpg,.jpeg,.webp,.avif}'
+	'../assets/showcase/*{.png,.jpg,.jpeg,.webp,.avif}',
 );
 const thumbnail = thumbnails[`../assets/showcase/${Astro.props.thumbnail}`];
 if (!thumbnail) {

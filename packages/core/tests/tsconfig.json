@@ -1,0 +1,10 @@
+{
+  "extends": "@total-typescript/tsconfig/tsc/no-dom/library-monorepo",
+  "include": ["**/*", "../src/**/*"],
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true
+  }
+}

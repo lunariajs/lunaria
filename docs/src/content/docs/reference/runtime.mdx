@@ -11,21 +11,85 @@ Lunaria can also be used outside of its build process, allowing for integrations
 Lunaria exports more runtime functions than currently documented. Their behavior, as well as support is not guaranteed during public beta.
 :::
 
-## `lunaria()`
+## `createLunaria()`
 
-The `lunaria()` function is a way to get Lunaria's localization status during runtime. It will validate the configuration, clone your git history (if used in a shallow repository), and return a Promise of your localization status array.
+Returns a Promise of a `Lunaria` instance to get Lunaria's localization status during runtime, after loading and validating your configuration and running your [integrations](/reference/configuration/#integrations).
 
 ```ts title="example-usage.ts"
-import { lunaria } from '@lunariajs/core';
+import { createLunaria } from '@lunariajs/core';
 
-const config = {
-	// your Lunaria configuration
-	// ...
-};
-
-const status = await lunaria(config);
+const lunaria = await createLunaria();
+const status = await lunaria.getFullStatus();
 ```
 
-:::tip
-You can see an example of how this function is used in the [Astro Docs' Translation Tuesday Bot](https://github.com/withastro/docs/blob/main/scripts/tuesday-bot.ts#L10).
-:::
+`createLunaria()` accepts an optional object with the following properties:
+
+- `config` — a Lunaria configuration object to use instead of loading your `lunaria.config.*` file.
+- `force` — whether to ignore the cached git data and build the status from scratch, like the [`--force` CLI option](/reference/cli/#--force).
+- `logLevel` — the verbosity of the console output, one of `'error'`, `'warn'`, `'info'`, `'debug'`, or `'silent'`. Defaults to `'info'`.
+
+```ts title="example-usage.ts"
+import { createLunaria } from '@lunariajs/core';
+
+const lunaria = await createLunaria({
+	config: {
+		// your Lunaria configuration
+		// ...
+	},
+	force: true,
+	logLevel: 'silent',
+});
+```
+
+### `config`
+
+The final Lunaria configuration, after being validated and updated by your integrations.
+
+```ts
+const { sourceLocale, locales } = lunaria.config;
+```
+
+### `getFullStatus()`
+
+Returns a Promise of the localization status array of all the tracked files, in the same order as your [`files`](/reference/configuration/#files-required) entries.
+
+```ts
+const status = await lunaria.getFullStatus();
+```
+
+### `getFileStatus()`
+
+Returns a Promise of the localization status of a single file. It accepts either the path of a source file or one of its localizations.
+
+```ts
+const status = await lunaria.getFileStatus('src/content/docs/en/getting-started.mdx');
+```
+
+### `gitHostingLinks()`
+
+Returns an object of functions to generate links to your files in the git hosting platform set in your [`repository`](/reference/configuration/#repository-required) configuration, the same links used in the dashboard:
+
+- `source(path)` — the link to view a file in the tracked branch.
+- `history(path, since?)` — the link to the commit history of a file, optionally starting from an ISO date.
+- `create(path)` — the link to create a file at the specified path, e.g. for a missing localization.
+- `clone()` — the URL to clone the repository.
+
+```ts
+const links = lunaria.gitHostingLinks();
+
+const sourceLink = links.source('src/content/docs/en/guide.mdx');
+const historyLink = links.history('src/content/docs/en/guide.mdx', '2024-01-01T00:00:00.000Z');
+```
+
+## `generateDashboard()`
+
+Returns the HTML of your localization dashboard for the specified configuration and status, the same way `lunaria build` does.
+
+```ts title="example-usage.ts"
+import { createLunaria, generateDashboard } from '@lunariajs/core';
+
+const lunaria = await createLunaria();
+const status = await lunaria.getFullStatus();
+
+const dashboard = generateDashboard(lunaria.config, status);
+```

@@ -1,4 +1,4 @@
-import { html } from './index.js';
+import { html } from './html.ts';
 
 export const Styles = html`
 	<style>

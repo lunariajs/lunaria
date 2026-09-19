@@ -1,0 +1,13 @@
+{
+  "name": "@example/external",
+  "type": "module",
+  "private": "true",
+  "version": "0.0.1",
+  "dependencies": {
+    "@lunariajs/core": "workspace:^"
+  },
+  "scripts": {
+    "lunaria:build": "lunaria build",
+    "lunaria:preview": "lunaria preview"
+  }
+}

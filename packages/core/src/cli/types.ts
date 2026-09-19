@@ -8,27 +8,19 @@ export type CLI = {
 };
 
 export type GlobalOptions = {
-	config: string | undefined;
+	config?: string | undefined;
 };
 
 export type BuildOptions = GlobalOptions & {
-	'skip-status': boolean | undefined;
-};
-
-export type SyncOptions = GlobalOptions & {
-	package: string | undefined;
-	'skip-questions': boolean | undefined;
+	force?: boolean | undefined;
 };
 
 export type InitOptions = GlobalOptions;
 
 export type PreviewOptions = GlobalOptions & {
-	port: string | undefined;
+	port?: string | undefined;
 };
 
-export type StdoutOptions = GlobalOptions;
-
 export type PackageJson = {
-	dependencies?: Record<string, string>;
-	devDependencies?: Record<string, string>;
+	scripts?: Record<string, string>;
 };

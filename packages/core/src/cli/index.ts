@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-import { parseCommand } from './helpers.js';
-import type { CLI } from './types.js';
+import { logger } from './console.ts';
+import { parseCommand } from './helpers.ts';
+import type { CLI } from './types.ts';
 
 const cli: CLI = {
 	commands: [
@@ -10,8 +11,8 @@ const cli: CLI = {
 			usage: '[...options]',
 			options: [
 				{
-					name: '--skip-status',
-					description: 'Skip the status build and use the one from disk instead.',
+					name: '--force',
+					description: 'Ignore the cached git data and build the status from scratch.',
 				},
 			],
 		},
@@ -31,26 +32,6 @@ const cli: CLI = {
 				},
 			],
 		},
-		{
-			name: 'stdout',
-			description: 'Log your config and status in the console.',
-			usage: '[...options]',
-		},
-		{
-			name: 'sync',
-			description: 'Sync your config fields based on your project.',
-			usage: '[...options]',
-			options: [
-				{
-					name: '--package <package>',
-					description: 'Skip the package selection and use the specified one instead.',
-				},
-				{
-					name: '--skip-questions',
-					description: 'Confirm all config changes without waiting for prompts.',
-				},
-			],
-		},
 	],
 	options: [
 		{
@@ -65,7 +46,7 @@ const cli: CLI = {
 };
 
 async function showHelp(command?: string) {
-	const { help } = await import('./help/index.js');
+	const { help } = await import('./help/index.ts');
 	help(cli, command);
 }
 
@@ -74,41 +55,51 @@ async function main() {
 	try {
 		const { name, options } = parseCommand();
 
-		if (name && options.help) {
+		if (!name) {
+			await showHelp();
+			return;
+		}
+
+		if (!cli.commands.some((existingCommand) => existingCommand.name === name)) {
+			logger.error(`Unknown command \`${name}\`.`);
+			await showHelp();
+			process.exitCode = 1;
+			return;
+		}
+
+		if (options.help) {
 			await showHelp(name);
 			return;
 		}
 
 		switch (name) {
-			case 'build':
-				const { build } = await import('./build/index.js');
+			case 'build': {
+				const { build } = await import('./build/index.ts');
 				await build(options);
 				break;
-			case 'init':
-				const { init } = await import('./init/index.js');
+			}
+			case 'init': {
+				const { init } = await import('./init/index.ts');
 				await init(options);
 				break;
-			case 'preview':
-				const { preview } = await import('./preview/index.js');
+			}
+			case 'preview': {
+				const { preview } = await import('./preview/index.ts');
 				await preview(options);
 				break;
-			case 'stdout':
-				const { stdout } = await import('./stdout/index.js');
-				await stdout(options);
-				break;
-			case 'sync':
-				const { sync } = await import('./sync/index.js');
-				await sync(options);
-				break;
-			default:
-				await showHelp();
-				break;
+			}
 		}
 	} catch (e) {
-		/** Filter out parseArgs errors (invalid/unknown option) and instead show help */
-		if (e instanceof TypeError && e?.stack?.includes('ERR_PARSE_ARGS')) await showHelp();
-		else throw e;
+		if (!(e instanceof Error) || !(e as NodeJS.ErrnoException).code?.startsWith('ERR_PARSE_ARGS')) {
+			throw e;
+		}
+
+		logger.error(e.message);
+		await showHelp(process.argv[2]);
+		process.exitCode = 1;
 	}
 }
-
-main().catch(console.error);
+main().catch((e) => {
+	logger.error(e instanceof Error ? e.message : e);
+	process.exit(1);
+});

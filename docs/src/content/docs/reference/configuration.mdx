@@ -5,13 +5,21 @@ sidebar:
   order: 0
 ---
 
-Lunaria allows for extensive customization of its default behavior. This reference covers all the available options in a `lunaria.config.json` file.
+Lunaria allows for extensive customization of its default behavior. This reference covers all the available options in a `lunaria.config.mjs` file.
 
-```json title="lunaria.config.json"
-{
-	"$schema": "./node_modules/@lunariajs/core/config.schema.json"
-}
+```js title="lunaria.config.mjs"
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+	// your configuration options go here...
+});
 ```
+
+:::tip
+`@lunariajs/core/config` exports the `defineConfig()` helper you can wrap your configuration with to add IntelliSense support in your code editor.
+
+Lunaria also supports `.js`/`.cjs` and `.ts`/`.mts` configuration files, so you can opt for the best file extension for your project.
+:::
 
 ## Top-level Options
 
@@ -19,73 +27,108 @@ Lunaria allows for extensive customization of its default behavior. This referen
 
 **Type: [`Repository`](#repository)**
 
-Configure your dashboard's displayed git hosting links. The expected properties are:
+Information about your project's repository, used in the dashboard's git hosting links. The expected properties are:
 
-- `name` — The unique name of your repository in the git hosting platform, e.g. `'yanthomasdev/lunaria'`.
-- `branch` — The name of your repository's branch tracked content, by default `'main'`.
-- `rootDir` — The root directory of the project if using a monorepo, e.g. `'docs'`.
-- `hosting` — The git hosting platform being used, e.g. `'github'` or `'gitlab'`.
+- `name` — the unique name of your repository in the git hosting platform, e.g. `'lunariajs/lunaria'`.
+- `branch` — the name of your repository's branch tracked content, by default `'main'`.
+- `rootDir` — the root directory of the project if using a monorepo, e.g. `'docs'`.
+- `hosting` — the git hosting platform being used, `'github'` or `'gitlab'`.
+
+```js
+export default defineConfig({
+	repository: {
+		name: 'lunariajs/lunaria',
+		branch: 'main',
+		rootDir: 'docs',
+		hosting: 'github',
+	},
+});
+```
 
 #### `Repository`
 
 ```ts
 type Repository = {
 	name: string;
-	branch: string;
+	branch?: string;
 	rootDir?: string;
-	hosting: 'github' | 'gitlab';
+	hosting?: 'github' | 'gitlab';
 };
 ```
 
-### defaultLocale (required)
+### sourceLocale (required)
 
-**Type: `{ label: string; lang: string }`**
+**Type: [`Locale`](#locale)**
 
-Set the default locale of your project, where the source content is from.
+The source locale of your project, where the source content is from.
 
-`label` is the display name of the locale (e.g. `"English"`), and `lang` is the [BCP-47 tag](https://datatracker.ietf.org/doc/html/rfc5646), or other identifying code of the locale used in the tracked file's path (e.g. `"en"`).
+`label` is the display name of the locale (e.g. `'English'`), and `lang` is the [BCP-47 tag](https://datatracker.ietf.org/doc/html/rfc5646), or other identifying code of the locale used in the tracked file's path (e.g. `'en'`).
 
-```json
-{
-	"defaultLocale": {
-		"label": "English",
-		"lang": "en"
-	}
-}
+```js
+export default defineConfig({
+	sourceLocale: {
+		label: 'English',
+		lang: 'en',
+	},
+});
+```
+
+Optionally, `parameters` sets [custom parameters](/guides/tracking/#custom-parameters) with values specific to the locale that can be used in your [`files`' `pattern`](#files-required).
+
+```js
+export default defineConfig({
+	sourceLocale: {
+		label: 'English',
+		lang: 'en',
+		parameters: {
+			tag: 'en',
+		},
+	},
+});
+```
+
+#### `Locale`
+
+```ts
+type Locale = {
+	label: string;
+	lang: string;
+	parameters?: Record<string, string>;
+};
 ```
 
 ### locales (required)
 
-**Type: `{ label: string; lang: string }[]`**
+**Type: [`Locale[]`](#locale)**
 
-Set all the locales for localization of your project. Its entries follow the same signature as [defaultLocale](#defaultlocale-required).
+The locales your project is localized into. Its entries follow the same signature as [sourceLocale](#sourcelocale-required).
 
-```json
-{
-	"locales": [
+```js
+export default defineConfig({
+	locales: [
 		{
-			"label": "Spanish",
-			"lang": "es"
+			label: 'Spanish',
+			lang: 'es',
 		},
 		{
-			"label": "Português",
-			"lang": "pt"
-		}
-	]
-}
+			label: 'Português',
+			lang: 'pt',
+		},
+	],
+});
 ```
 
 ### files (required)
 
 **Type: [`File[]`](#file)**
 
-Configure your dashboard's tracked files.
+The files tracked by your dashboard.
 
 The order of the entries in `files` will be respected and displayed accordingly in the dashboard. Each entry must have the following properties:
 
-- `location` — a glob pattern of the file(s) to be tracked, e.g. `'src/content/docs/**/*.mdx'`.
-- `ignore` — an array of glob patterns to be ignored from being tracked, defaults to `['node_modules']`.
-- `pattern` — a [path-to-regexp pattern](https://github.com/pillarjs/path-to-regexp) of the file(s) paths, e.g. `'src/content/docs/@lang/@path'` (`@lang` and `@path` are custom syntax provided by Lunaria, in more complex cases can be changed for normal `:lang` and `:path` parameters).
+- `include` — an array of glob patterns of the source file(s) to be tracked, e.g. `['src/content/docs/en/**/*.mdx']`.
+- `exclude` — an array of glob patterns to be ignored from being tracked, defaults to `['node_modules']`.
+- `pattern` — a [path-to-regexp pattern](https://github.com/pillarjs/path-to-regexp) of the file(s) paths, e.g. `'src/content/docs/@lang/@path'` (`@lang` and `@path` are custom syntax provided by Lunaria, in more complex cases can be changed for normal `:lang` and `:path` parameters). When the source and localized files follow different structures, an object with a `source` and a `locales` pattern can be used instead, e.g. `{ source: 'src/content/docs/@path', locales: 'src/content/docs/@lang/@path' }`.
 
 #### File types
 
@@ -95,88 +138,132 @@ Each entry in `files` has to include a `type`, changing how the tracking system 
 
 The `universal` file type makes Lunaria track the file's status by the git history alone, while also accepting any file extension.
 
-```json {6}
-{
-	"files": [
+```js {6}
+export default defineConfig({
+	files: [
 		{
-			"location": "**/*.md",
-			"pattern": "@lang/@path",
-			"type": "universal"
-		}
-	]
-}
+			include: ['en/**/*.md'],
+			pattern: '@lang/@path',
+			type: 'universal',
+		},
+	],
+});
 ```
 
 ##### `dictionary`
 
-Alongside the normal git history tracking, the `dictionary` file type makes Lunaria check for key completion: each key in a source dictionary has to be present in the localizations to be marked as done.
+The `dictionary` file type makes Lunaria check for key completion: each key in a source dictionary has to be present in the localizations to be marked as done.
 
-The following file extensions are supported: `json`, `yml`, `md`, `markdown`, `mdx`, `mdoc`, `js`, `cjs`, `mjs`, `ts`, `cts`, `mts`.
+The following file extensions are supported: `json`, `yml`, `yaml`, `po`, `pot`, `js`, `cjs`, `mjs`, `ts`, `cts`, `mts`.
 
 If any keys are missing in localizations, the dashboard's details for that locale will include a collapsible list of the missing keys for it to be considered done.
 
-You can make keys optional (they don't need to be included for a localization to be considered done) in the additional `optionalKeys` property. Each `optionalKeys` key is a shared path with an array of dictionary keys to be considered optional.
+You can make keys optional (they don't need to be included for a localization to be considered done) in the additional `optionalKeys` property. `optionalKeys` mirrors the structure of your dictionaries, where a key set to `true` is considered optional, including any keys nested inside of it.
 
-```json {6-10}
-{
-	"files": [
+```js {7-12}
+export default defineConfig({
+	files: [
 		{
-			"location": "ui/**/*.{json,yml}",
-			"pattern": "ui/@lang/@path",
-			"type": "dictionary",
-			"optionalKeys": {
-				"ui/nav.json": ["footer", "sidebar"],
-				"ui/ui.yml": ["search"]
-			}
-		}
-	]
-}
+			include: ['ui/en/**/*.{json,yml}'],
+			pattern: 'ui/@lang/@path',
+			type: 'dictionary',
+			optionalKeys: {
+				footer: true,
+				sidebar: {
+					search: true,
+				},
+			},
+		},
+	],
+});
+```
+
+You can also make the keys of a locale count towards the completion of another with the additional `merge` property. Each `merge` key is the `lang` of a locale with an array of the `lang` of the locales to merge keys from, in order. A key is only considered missing if it is absent from the locale and all the locales merged into it.
+
+```js {7-9}
+export default defineConfig({
+	files: [
+		{
+			include: ['ui/en/**/*.{json,yml}'],
+			pattern: 'ui/@lang/@path',
+			type: 'dictionary',
+			merge: {
+				'es-419': ['es'],
+			},
+		},
+	],
+});
 ```
 
 #### `File`
 
 ```ts
 type File = {
-	location: string;
-	ignore: string[];
-	pattern: string;
+	include: string[];
+	exclude?: string[];
+	pattern: string | { source: string; locales: string };
 } & (
 	| { type: 'universal' }
-	| { type: 'dictionary'; optionalKeys?: Record<string, string[]> }
+	| { type: 'dictionary'; optionalKeys?: OptionalKeys; merge?: Record<string, string[]> }
 );
+
+type OptionalKeys = { [key: string]: boolean | OptionalKeys };
 ```
 
-### ignoreKeywords
+### external
 
-**Type: `string[]`**<br/>
-**Default: `['lunaria-ignore', 'fix typo']`**
+**Type: `boolean`**<br/>
+**Default: `false`**
 
-List of keywords in a commit's title for Lunaria to automatically ignore and don't trigger status changes. By default, any commits' title including `lunaria-ignore` or `fix typo` will be ignored.
+Whether the tracked content is from an external repository. When enabled, Lunaria clones the repository set in [`repository`](#repository-required) into the [`cloneDir`](#clonedir) directory and tracks its content, instead of the current working directory's.
 
-You can disable the feature by providing an empty array (`[]`), or override with your own keywords.
+This option is useful to build a dashboard for a repository from outside of it, e.g. from a different repository or project.
 
-```json
-{
-	"ignoreKeywords": ["i18nIgnore", "en-only"]
-}
+```js
+export default defineConfig({
+	external: true,
+});
 ```
 
-### localizableProperty
+### integrations
 
-**Type: `string`**
+**Type: [`LunariaIntegration[]`](#lunariaintegration)**
 
-Name of a frontmatter property with boolean value determining if a file can be localized or not.
+Array of integrations to extend Lunaria with. An integration is an object with a `name` and `hooks`, where the `setup` hook runs before the configuration is validated and can update it through `updateConfig()`.
 
-Any files where the property is absent or found with a `false` will not be tracked, while the ones with `true` will, and in case a file was found with a non-boolean value, an error will be thrown.
+```js
+export default defineConfig({
+	integrations: [
+		{
+			name: 'my-integration',
+			hooks: {
+				setup: ({ config, updateConfig, logger }) => {
+					logger.info(`Setting up ${config.repository.name}...`);
+					updateConfig({
+						dashboard: {
+							title: 'My Localization Status',
+						},
+					});
+				},
+			},
+		},
+	],
+});
+```
 
-For files that do not support frontmatter, this option will be ignored and the file assumed to be localizable.
+#### `LunariaIntegration`
 
-This option is recommended when you use a file format that supports frontmatter metadata (e.g. Markdown, MDX, YAML) and you want to gradually make files available for localization. If you expect a specific file to never be localized, consider not tracking it in the first place.
-
-```json
-{
-	"localizableProperty": "readyForL10n"
-}
+```ts
+type LunariaIntegration = {
+	name: string;
+	hooks: {
+		setup?: (options: {
+			config: LunariaUserConfig;
+			updateConfig: (config: Partial<LunariaUserConfig>) => void;
+			logger: ConsolaInstance;
+		}) => void | Promise<void>;
+	};
+};
 ```
 
 ### outDir
@@ -184,14 +271,29 @@ This option is recommended when you use a file format that supports frontmatter 
 **Type: `string`**<br/>
 **Default: `'./dist/lunaria'`**
 
-Set the directory that `lunaria build` writes your final dashboard and status to.
+The directory that `lunaria build` writes your final dashboard and status to.
 
 The expected value is a relative path from the project's root.
 
-```json
-{
-	"outDir": "./lunaria"
-}
+```js
+export default defineConfig({
+	outDir: './lunaria',
+});
+```
+
+### cacheDir
+
+**Type: `string`**<br/>
+**Default: `'./node_modules/.cache/lunaria'`**
+
+The directory Lunaria uses to cache the git data of your tracked files between builds.
+
+The expected value is a relative path from the project's root.
+
+```js
+export default defineConfig({
+	cacheDir: './lunaria/cache',
+});
 ```
 
 ### cloneDir
@@ -199,28 +301,73 @@ The expected value is a relative path from the project's root.
 **Type: `string`**<br/>
 **Default: `'./node_modules/.cache/lunaria/history'`**
 
-Set the directory that Lunaria will use to store your temporary git history when using a shallow repository.
+The directory Lunaria uses to clone your [external repository](#external) into.
 
-The expected value is a relative path from the project's root.
+The expected value is a relative path from the project's root, different from [`cacheDir`](#cachedir).
 
-```json
-{
-	"cloneDir": "./lunaria/history"
-}
+```js
+export default defineConfig({
+	cloneDir: './lunaria/history',
+});
 ```
 
 ### renderer
 
+**Type: [`RendererConfig`](/reference/renderer/)**
+
+The dashboard renderer configuration used to slot and override the dashboard's content.
+
+```js
+import { html } from '@lunariajs/core';
+
+export default defineConfig({
+	renderer: {
+		slots: {
+			afterTitle: () => html`<p>Example component</p>`,
+		},
+	},
+});
+```
+
+Visit the [Renderer API reference](/reference/renderer/) to learn about all the available options.
+
+## Tracking Options
+
+### tracking.ignoredKeywords
+
+**Type: `string[]`**<br/>
+**Default: `['lunaria-ignore', 'fix typo']`**
+
+Array of keywords in a commit's title for Lunaria to automatically ignore and don't trigger status changes. By default, any commits' title including `lunaria-ignore` or `fix typo` will be ignored.
+
+You can disable the feature by providing an empty array (`[]`), or override with your own keywords.
+
+```js
+export default defineConfig({
+	tracking: {
+		ignoredKeywords: ['i18nIgnore', 'en-only'],
+	},
+});
+```
+
+### tracking.localizableProperty
+
 **Type: `string`**
 
-Set the file path to a `.(c/m)js` or `.(c/m)ts` file with your dashboard renderer configuration.
+Name of a frontmatter property with boolean value determining if a file can be localized or not.
 
-The expected value is a relative path from the project's root.
+Any files where the property is absent or found with a `false` will not be tracked, while the ones with `true` will, and in case a file was found with a non-boolean value, it will not be tracked either.
 
-```json
-{
-	"renderer": "./renderer.config.ts"
-}
+For files that do not support frontmatter, this option will be ignored and the file assumed to be localizable.
+
+This option is recommended when you use a file format that supports frontmatter metadata (e.g. Markdown, MDX, Markdoc) and you want to gradually make files available for localization. If you expect a specific file to never be localized, consider not tracking it in the first place.
+
+```js
+export default defineConfig({
+	tracking: {
+		localizableProperty: 'readyForL10n',
+	},
+});
 ```
 
 ## Dashboard Options
@@ -230,14 +377,14 @@ The expected value is a relative path from the project's root.
 **Type: `string`**<br/>
 **Default: `'Localization Status'`**
 
-Defines the title of your dashboard, used in the dashboard's heading and meta tags.
+The title of your dashboard, used in the dashboard's heading and meta tags.
 
-```json
-{
-	"dashboard": {
-		"title": "My Project's Localization Status"
-	}
-}
+```js
+export default defineConfig({
+	dashboard: {
+		title: "My Project's Localization Status",
+	},
+});
 ```
 
 ### dashboard.description
@@ -245,65 +392,65 @@ Defines the title of your dashboard, used in the dashboard's heading and meta ta
 **Type: `string`**<br/>
 **Default: `'Online localization status dashboard of the project'`**
 
-Defines the description of your dashboard, used in the dashboard's meta tags.
+The description of your dashboard, used in the dashboard's meta tags.
 
-```json
-{
-	"dashboard": {
-		"description": "The localization status dashboard of my project"
-	}
-}
+```js
+export default defineConfig({
+	dashboard: {
+		description: 'The localization status dashboard of my project',
+	},
+});
 ```
 
 ### dashboard.site
 
 **Type: `string`**
 
-Defines the deployed URL of your dashboard, used in the dashboard's meta tags.
+The deployed URL of your dashboard, used in the dashboard's meta tags.
 
-```json
-{
-	"dashboard": {
-		"site": "https://localization.lunaria.dev/"
-	}
-}
+```js
+export default defineConfig({
+	dashboard: {
+		site: 'https://localization.lunaria.dev/',
+	},
+});
 ```
 
 ### dashboard.basesToHide
 
-**Type: `string`**
+**Type: `string[]`**
 
 Array of path bases to be omitted from the generated dashboard's links.
 
 In contexts where the links to tracked files are deep in the directory structure, e.g. `src/content/docs/file.mdx`, it might be interesting to show more simplified link labels, e.g. `file.mdx`.
 
-```json
-{
-	"dashboard": {
-		"basesToHide": ["src/content/docs/"]
-	}
-}
+```js
+export default defineConfig({
+	dashboard: {
+		basesToHide: ['src/content/docs/'],
+	},
+});
 ```
 
 ### dashboard.customCss
 
-**Type: `string`**
+**Type: `string[]`**
 
 Array of relative paths to external `.css` files to inline into the dashboard.
 
-```json
-{
-	"dashboard": {
-		"customCss": ["./lunaria/css/theme.css", "./lunaria/css/custom.css"]
-	}
-}
+```js
+export default defineConfig({
+	dashboard: {
+		customCss: ['./lunaria/css/theme.css', './lunaria/css/custom.css'],
+	},
+});
 ```
 
 ### dashboard.favicon
 
 **Type: [`Favicon`](#favicon)**
 
-Defines the favicon(s) of your generated dashboard.
+The favicon(s) of your generated dashboard.
 
 `external` accepts an array of external favicons, with the following properties:
 
@@ -312,20 +459,20 @@ Defines the favicon(s) of your generated dashboard.
 
 `inline` accepts an relative path to a `.svg` file that will be inlined into the dashboard, e.g. `'./lunaria/favicon.svg'`.
 
-```json
-{
-	"dashboard": {
-		"favicon": {
-			"external": [
+```js
+export default defineConfig({
+	dashboard: {
+		favicon: {
+			external: [
 				{
-					"link": "https://lunaria.dev/favicon.svg",
-					"type": "image/svg+xml"
-				}
+					link: 'https://lunaria.dev/favicon.svg',
+					type: 'image/svg+xml',
+				},
 			],
-			"inline": "./lunaria/favicon.svg"
-		}
-	}
-}
+			inline: './lunaria/favicon.svg',
+		},
+	},
+});
 ```
 
 #### `Favicon`
@@ -341,33 +488,37 @@ type Favicon = {
 
 **Type: `Record<string, string>`**
 
-Defines the UI strings of the dashboard. Specifically, the `lang` and `dir` keys refer to the HTML attributes of the same name used in the generated dashboard, while the other keys directly change the UI of the page.
+The UI strings of the dashboard. Specifically, the `lang` and `dir` keys refer to the HTML attributes of the same name used in the generated dashboard, while the other keys directly change the UI of the page.
 
 The following code sample contains all the keys of `dashboard.ui` and its default values:
 
-```json
-{
-	"dir": "ltr",
-	"lang": "en",
-	"status.emojiDone": "✔️",
-	"status.emojiMissing": "❌",
-	"status.emojiOutdated": "🔄",
-	"status.done": "done",
-	"status.missing": "missing",
-	"status.outdated": "outdated",
-	"statusByFile.heading": "Localization status by file",
-	"statusByFile.tableRowFile": "File",
-	"statusByFile.tableSummaryFormat": "{missing_emoji} {missing_word} &nbsp; {outdated_emoji} {outdated_word} &nbsp; {done_emoji} {done_word}",
-	"statusByLocale.completeLocalization": "This localization is complete, amazing job! 🎉",
-	"statusByLocale.createFileLink": "Create file",
-	"statusByLocale.detailsSummaryFormat": "{done_amount} {done_word}, {outdated_amount} {outdated_word}, {missing_amount} {missing_word}",
-	"statusByLocale.detailsTitleFormat": "{locale_name} ({locale_tag})",
-	"statusByLocale.heading": "Localization progress by locale",
-	"statusByLocale.outdatedLocalizationLink": "outdated localization",
-	"statusByLocale.sourceChangeHistoryLink": "source change history",
-	"statusByLocale.incompleteLocalizationLink": "incomplete localization",
-	"statusByLocale.missingKeys": "Missing keys"
-}
+```js
+export default defineConfig({
+	dashboard: {
+		ui: {
+			dir: 'ltr',
+			lang: 'en',
+			'status.emojiDone': '✔',
+			'status.emojiMissing': '❌',
+			'status.emojiOutdated': '🔄',
+			'status.done': 'done',
+			'status.missing': 'missing',
+			'status.outdated': 'outdated',
+			'statusByFile.heading': 'Localization status by file',
+			'statusByFile.tableRowFile': 'File',
+			'statusByFile.tableSummaryFormat': '{missing_emoji} {missing_word} &nbsp; {outdated_emoji} {outdated_word} &nbsp; {done_emoji} {done_word}',
+			'statusByLocale.completeLocalization': 'This localization is complete, amazing job! 🎉',
+			'statusByLocale.createFileLink': 'Create file',
+			'statusByLocale.detailsSummaryFormat': '{done_amount} {done_word}, {outdated_amount} {outdated_word}, {missing_amount} {missing_word}',
+			'statusByLocale.detailsTitleFormat': '{locale_name} ({locale_tag})',
+			'statusByLocale.heading': 'Localization progress by locale',
+			'statusByLocale.outdatedLocalizationLink': 'outdated localization',
+			'statusByLocale.sourceChangeHistoryLink': 'source change history',
+			'statusByLocale.incompleteLocalizationLink': 'incomplete localization',
+			'statusByLocale.missingKeys': 'Missing keys',
+		},
+	},
+});
 ```
 
 :::caution

@@ -45,8 +45,6 @@ Commands
     build  Build your dashboard and status to disk.
      init  Initialize Lunaria in your project.
   preview  Preview your built dashboard locally.
-   stdout  Log your config and status in the console.
-     sync  Sync your config fields based on your project.
 
 Global Options
 
@@ -55,7 +53,7 @@ Global Options
 ```
 
 :::tip
-You can also see a specific command's options by adding `--help` after the command, e.g. `lunaria sync --help`.
+You can also see a specific command's options by adding `--help` after the command, e.g. `lunaria build --help`.
 :::
 
 ## Commands
@@ -66,15 +64,15 @@ Builds your dashboard and status to disk. By default, the files will be output i
 
 #### Options
 
-##### `--skip-status`
+##### `--force`
 
-Skips status generation and uses the latest already available status on disk instead.
+Ignores the cached git data and builds the status from scratch.
 
-This option is recommended when you want to rebuild your dashboard constantly (e.g. to test styling changes) without waiting for the status to be built.
+This option is recommended when you suspect the cached data is stale, e.g. after rewriting the history of your branch.
 
 ### `lunaria init`
 
-Initializes Lunaria in your project, prompting you with a few questions and setting up a new `lunaria.config.json` file.
+Initializes Lunaria in your project, prompting you with a few questions and setting up a new `lunaria.config.mjs` file.
 
 ### `lunaria preview`
 
@@ -88,30 +86,6 @@ This command is not meant for being used in production. For production hosting, 
 
 Specifies which port to open the preview server on. By default, `3000` will be used. If `3000` or your specified port isn't available, a random available port will be used instead.
 
-### `lunaria stdout`
-
-Logs your configuration and status in the console.
-
-This command is meant for interfacing with Lunaria without necessarily depending on the package, e.g. to build a GitHub Action that uses the already set up Lunaria in a repository.
-
-### `lunaria sync`
-
-Syncs your configuration file's `files`, `defaultLocale`, and/or `locales` fields according to your project's structure.
-
-This command works by analyzing your project's `package.json` for packages Lunaria can infer the configuration, generally from its own configuration file or default content structure.
-
-The currently supported packages in `lunaria sync` are `vitepress` and `@astrojs/starlight`.
-
-#### Options
-
-##### `--package <package>`
-
-Specifies the package you want to sync with, skipping the selection prompt in case several supported packages are found in the same project.
-
-##### `--skip-questions`
-
-Skips all the individual confirmation prompts to changes the `files`, `defaultLocale`, and/or `locales` fields of your configuration.
-
 ## Global Options
 
 ### `--help`
@@ -120,6 +94,6 @@ Prints the help message.
 
 ### `--config <path>`
 
-Specifies the path to Lunaria's configuration file relative to the project's root. By default, Lunaria expects a `lunaria.config.json` at the root of the project.
+Specifies the path to Lunaria's configuration file relative to the project's root. By default, Lunaria looks for a `lunaria.config.mjs`, `lunaria.config.js`, `lunaria.config.ts`, `lunaria.config.mts`, `lunaria.config.cjs`, or `lunaria.config.cts` file at the root of the project, in this order.
 
 Use this option if you wish to locate your configuration file in other directory or with a different name.

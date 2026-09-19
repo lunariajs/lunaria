@@ -1,7 +1,7 @@
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
-import starlightLinksValidator from 'starlight-links-validator';
 import starlightBlog from 'starlight-blog';
+import starlightLinksValidator from 'starlight-links-validator';
 
 const site = 'https://lunaria.dev/';
 
@@ -16,20 +16,31 @@ export default defineConfig({
 				dark: './src/assets/logo-dark.svg',
 				replacesTitle: true,
 			},
-			social: {
-				github: 'https://github.com/yanthomasdev/lunaria',
-			},
+			social: [
+				{
+					icon: 'github',
+					label: 'GitHub',
+					href: 'https://github.com/lunariajs/lunaria',
+				},
+			],
 			editLink: {
-				baseUrl: 'https://github.com/yanthomasdev/lunaria/edit/main/docs/',
+				baseUrl: 'https://github.com/lunariajs/lunaria/edit/main/docs/',
 			},
 			head: [
 				{
 					tag: 'meta',
-					attrs: { property: 'og:image', content: site + 'og.jpg?v=1' },
+					attrs: { property: 'og:image', content: `${site}og.jpg?v=1` },
 				},
 				{
 					tag: 'meta',
-					attrs: { property: 'twitter:image', content: site + 'og.jpg?v=1' },
+					attrs: { property: 'twitter:image', content: `${site}og.jpg?v=1` },
+				},
+				{
+					tag: 'script',
+					attrs: {
+						defer: true,
+						src: 'https://assets.onedollarstats.com/stonks.js',
+					},
 				},
 			],
 			sidebar: [
@@ -45,6 +56,10 @@ export default defineConfig({
 							link: 'manual-installation',
 						},
 						{
+							label: 'Upgrade Lunaria',
+							link: 'upgrade-lunaria',
+						},
+						{
 							label: 'Recommendations',
 							link: 'recommendations',
 						},
@@ -56,15 +71,15 @@ export default defineConfig({
 				},
 				{
 					label: 'Guides',
-					autogenerate: { directory: 'guides' },
+					items: [{ autogenerate: { directory: 'guides' } }],
 				},
 				{
 					label: 'Integrations',
-					autogenerate: { directory: 'integrations' },
+					items: [{ autogenerate: { directory: 'integrations' } }],
 				},
 				{
 					label: 'Reference',
-					autogenerate: { directory: 'reference' },
+					items: [{ autogenerate: { directory: 'reference' } }],
 				},
 			],
 			customCss: ['./src/styles/theme.css', './src/styles/landing.css'],

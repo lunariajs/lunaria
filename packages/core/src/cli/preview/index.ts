@@ -1,35 +1,51 @@
-import getPort from 'get-port';
 import { existsSync, readFileSync } from 'node:fs';
 import http from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { join, resolve } from 'node:path';
-import { loadConfig } from '../../config/index.js';
-import { bold, highlight, preview as p } from '../console.js';
-import type { PreviewOptions } from '../types.js';
+import { loadConfig } from '../../config/config.ts';
+import { DashboardNotFound } from '../../errors/errors.ts';
+import { runSetupHook } from '../../integrations/integrations.ts';
+import { bold, createCommandLogger, highlight } from '../console.ts';
+import type { PreviewOptions } from '../types.ts';
 
 export async function preview(options: PreviewOptions) {
-	const configPath = options.config ?? './lunaria.config.json';
-	const serverPort = await getPort({ port: options.port ? parseInt(options.port) : 3000 });
+	const logger = createCommandLogger('preview');
+	const requestedPort = options.port ? Number.parseInt(options.port, 10) : 3000;
 
-	const { userConfig } = await loadConfig(configPath);
+	const config = await runSetupHook(await loadConfig(options.config), logger);
 
-	const outDir = resolve(userConfig.outDir);
+	const outDir = resolve(config.outDir);
 	const dashboardPath = join(outDir, 'index.html');
 
 	if (!existsSync(dashboardPath)) {
-		console.log(p(`Could not find a build to preview at ${highlight(dashboardPath)}`));
-		process.exit(0);
+		throw new Error(DashboardNotFound.message(dashboardPath));
 	}
 
-	http
-		.createServer((_, res) => {
-			const dashboardFile = readFileSync(dashboardPath);
+	const server = http.createServer((_, res) => {
+		res.writeHead(200, { 'Content-Type': 'text/html' });
+		res.end(readFileSync(dashboardPath));
+	});
 
-			res.writeHead(200, { 'Content-Type': 'text/html' });
-			res.write(dashboardFile, 'binary');
-			res.end();
-		})
-		.listen(serverPort);
+	const port = await listen(server, requestedPort);
 
-	console.log(p(`Server open on ${highlight(`http://localhost:${serverPort.toString()}/`)}`));
-	console.log(p(`Press ${bold('CNTRL + C')} to close it.`));
+	logger.info(`Server open on ${highlight(`http://localhost:${port.toString()}/`)}`);
+	logger.info(`Press ${bold('CTRL + C')} to close it.`);
+}
+
+/** Starts the server on the requested port, falling back to a random available port if it is already in use. */
+function listen(server: http.Server, port: number) {
+	return new Promise<number>((resolvePort, reject) => {
+		server.once('error', (error: NodeJS.ErrnoException) => {
+			if (error.code === 'EADDRINUSE' && port !== 0) {
+				listen(server, 0).then(resolvePort, reject);
+				return;
+			}
+
+			reject(error);
+		});
+
+		server.listen(port, () => {
+			resolvePort((server.address() as AddressInfo).port);
+		});
+	});
 }
