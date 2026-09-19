@@ -1,11 +1,17 @@
 name: Publish Commit Preview
 on:
   pull_request:
+    paths:
+      - 'packages/**'
+      - '.github/workflows/publish-preview.yml'
   push:
     branches:
       - '**'
     tags:
       - '!**'
+    paths:
+      - 'packages/**'
+      - '.github/workflows/publish-preview.yml'
 
 jobs:
   build:
