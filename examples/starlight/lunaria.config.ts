@@ -1,4 +1,26 @@
+// TODO(HiDeoo) Revert all changes in this file.
+
+import { type Locale } from '@lunariajs/core';
 import { defineConfig } from '@lunariajs/core/config';
+
+export const locales = [
+	{ label: 'Dansk', lang: 'da' },
+	{ label: 'Deutsch', lang: 'de' },
+	{ label: 'Español', lang: 'es' },
+	{ label: 'فارسی', lang: 'fa' },
+	{ label: 'Français', lang: 'fr' },
+	{ label: 'हिंदी', lang: 'hi' },
+	{ label: 'Bahasa Indonesia', lang: 'id' },
+	{ label: 'Italiano', lang: 'it' },
+	{ label: '日本語', lang: 'ja' },
+	{ label: '한국어', lang: 'ko' },
+	{ label: 'Português do Brasil', lang: 'pt-br' },
+	{ label: 'Português', lang: 'pt-pt' },
+	{ label: 'Русский', lang: 'ru' },
+	{ label: 'Türkçe', lang: 'tr' },
+	{ label: 'Українська', lang: 'uk' },
+	{ label: '简体中文', lang: 'zh-cn' },
+] satisfies [Locale, ...Locale[]];
 
 export default defineConfig({
 	repository: {
@@ -9,16 +31,11 @@ export default defineConfig({
 		label: 'English',
 		lang: 'en',
 	},
-	locales: [
-		{
-			label: 'Português',
-			lang: 'pt',
-		},
-	],
+	locales,
 	files: [
 		{
-			include: ['src/content/docs/**/*.(md|mdx)'],
-			exclude: ['src/content/docs/pt/**/*.(md|mdx)'],
+			include: ['src/content/docs/**/*.{md,mdx}'],
+			exclude: locales.map((locale) => `src/content/docs/${locale.lang}/**`),
 			pattern: {
 				source: 'src/content/docs/@path',
 				locales: 'src/content/docs/@lang/@path',

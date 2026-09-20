@@ -65,8 +65,6 @@ export const Styles = html`
 
 		body {
 			color: var(--ln-color-black);
-			display: flex;
-			flex-direction: column;
 			font-family: var(--ln-font-body);
 			font-size: 16px;
 			line-height: 1.5;
@@ -113,10 +111,6 @@ export const Styles = html`
 		main {
 			max-width: 80ch;
 			margin-inline: auto;
-		}
-
-		.limit-to-viewport {
-			max-width: calc(100vw - 2rem);
 		}
 
 		p + p {
@@ -178,8 +172,14 @@ export const Styles = html`
 			font-size: 0.75rem;
 		}
 
-		.status-by-file {
+		.table-wrapper {
+			overflow-x: auto;
 			margin-bottom: 1rem;
+			width: fit-content;
+			max-width: 100%;
+		}
+
+		.status-by-file {
 			border-collapse: collapse;
 			border: 1px solid var(--ln-color-table-border);
 			font-size: 0.8125rem;
@@ -201,8 +201,6 @@ export const Styles = html`
 		.status-by-file th {
 			border-bottom: 1px solid var(--ln-color-table-border);
 			background: var(--ln-color-table-background);
-			position: sticky;
-			top: -1px;
 			white-space: nowrap;
 			padding-inline: 0.3rem;
 		}
