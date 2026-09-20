@@ -1,11 +1,17 @@
 name: Publish Commit Preview
 on:
   pull_request:
+    paths:
+      - 'packages/**'
+      - '.github/workflows/publish-preview.yml'
   push:
     branches:
       - '**'
     tags:
       - '!**'
+    paths:
+      - 'packages/**'
+      - '.github/workflows/publish-preview.yml'
 
 jobs:
   build:
@@ -14,9 +20,6 @@ jobs:
     steps:
       - name: Check out code using Git
         uses: actions/checkout@v7
-        with:
-          token: ${{ secrets.PAT }}
-          ref: ${{ github.head_ref }}
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v6

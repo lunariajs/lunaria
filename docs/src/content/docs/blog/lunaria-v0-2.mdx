@@ -1,0 +1,200 @@
+---
+title: Lunaria v0.2
+excerpt:
+  Lunaria v0.2 is here! This release brings JavaScript and TypeScript configuration, git data caching, flexible file patterns, improved dictionaries, external repository tracking, integrations, and a brand-new Runtime API.
+date: 2026-09-19
+authors:
+  name: Yan Thomas
+  title: Maintainer
+  picture: https://avatars.githubusercontent.com/u/61414485
+  url: https://github.com/yanthomasdev/
+---
+
+**Lunaria v0.2 is here!** This release brings a completely reworked core with JavaScript and TypeScript configuration, git data caching, flexible file patterns, improved dictionaries, external repository tracking, integrations, and a brand-new Runtime API, all paving the way for the eventual v1.0 release.
+
+Want to upgrade your existing project? Read the ["Upgrade Lunaria"](/upgrade-lunaria/) guide.
+
+## JavaScript and TypeScript configuration
+
+Previously, Lunaria was configured using a `lunaria.config.json` file. JSON had its benefits, like being easy to parse and modify, but it also kept Lunaria from reaching its full potential.
+
+Lunaria v0.2 replaces it with a JavaScript or TypeScript configuration file. Wrap your configuration in the new `defineConfig()` helper for editor completion and type hints, and you're good to go:
+
+```js title="lunaria.config.mjs"
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  repository: {
+    name: 'me/cool-docs',
+  },
+  sourceLocale: { label: 'English', lang: 'en' },
+  locales: [{ label: 'Português', lang: 'pt' }],
+  files: [
+    {
+      include: ['content/en/**/*.md'],
+      pattern: 'content/@lang/@path',
+      type: 'universal',
+    },
+  ],
+});
+```
+
+:::tip
+Since your configuration is now a regular module, you can import your framework's i18n configuration into it and keep a single source of truth for your locales.
+:::
+
+## Git data caching
+
+Lunaria's tracking system is powered by your git history, and reading the history of thousands of files on every build adds up quickly in large projects.
+
+Lunaria v0.2 now caches the git data of your tracked files between builds. This way, only the files changed since the last build need to have their history read again, cutting build times by up to half.
+
+This cache is automatically invalidated whenever your `tracking` options change. If you ever need to build your status from scratch, you can use the new [`--force`](/reference/cli/#--force) option:
+
+```sh
+lunaria build --force
+```
+
+## Flexible file patterns
+
+Every framework, library, and project organizes its content differently, sometimes in ways Lunaria couldn't handle before.
+
+The `pattern` of a `files` entry, which previously accepted only a single string representing the content structure, can now be an object with separate patterns for source and localized content:
+
+```js title="lunaria.config.mjs"
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  files: [
+    {
+      include: ['src/content/docs/**/*.mdx'],
+      exclude: ['src/content/docs/pt/**/*.mdx'],
+      pattern: {
+        source: 'src/content/docs/@path',
+        locales: 'src/content/docs/@lang/@path',
+      },
+      type: 'universal',
+    },
+  ],
+});
+```
+
+Additionally, locales can define custom `parameters` that become `@`-prefixed placeholders in your patterns. This is useful when your file paths don't match your locale's `lang`, for example, when your files use `pt-BR` while the `lang` is `pt-br`:
+
+```js title="lunaria.config.mjs"
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  sourceLocale: { label: 'English', lang: 'en', parameters: { tag: 'en' } },
+  locales: [{ label: 'Português do Brasil', lang: 'pt-br', parameters: { tag: 'pt-BR' } }],
+  files: [
+    {
+      include: ['src/i18n/en.yml'],
+      pattern: 'src/i18n/@tag.yml',
+      type: 'dictionary',
+    },
+  ],
+});
+```
+
+Read more about [different source and localized paths](/guides/tracking/#different-source-and-localized-paths) and [custom parameters](/guides/tracking/#custom-parameters) in the "Tracking" guide.
+
+## Improved dictionaries
+
+The `dictionary` file type, which checks if every key of your source dictionary is present in its localizations, received a lot of attention in this release:
+
+- **Nested keys are now checked:** previously, only the top-level keys of a dictionary were compared. Missing nested keys are now listed in the dashboard as dot-separated paths (e.g. `nav.home`), and `optionalKeys` now mirrors the structure of your dictionaries, so nested keys can be optional too.
+- **`gettext` support:** `.po` and `.pot` files can now be tracked as dictionaries, thanks to [Matt Kane](https://github.com/ascorbic)!
+- **Merged locales:** the new `merge` option makes the keys of one or more base locales count towards the completion of another. A key is only considered missing if it is absent from the locale and all of its base locales, which is perfect for regional variants that fall back to a base language:
+
+```js title="lunaria.config.mjs"
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  files: [
+    {
+      include: ['ui/en/**/*.json'],
+      pattern: 'ui/@lang/@path',
+      type: 'dictionary',
+      merge: {
+        'es-419': ['es'],
+      },
+    },
+  ],
+});
+```
+
+Read more about the [`dictionary` file type](/reference/configuration/#dictionary) in the "Configuration" reference.
+
+## External repository tracking
+
+Sometimes, you might want to build your dashboard or status from outside the repository where the content lives. With the new [`external`](/reference/configuration/#external) option, Lunaria clones the repository set in `repository` and tracks its content instead of the current working directory:
+
+```js title="lunaria.config.mjs"
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  repository: {
+    name: 'me/cool-docs',
+  },
+  external: true,
+});
+```
+
+## Integrations
+
+Lunaria v0.2 introduces the [`integrations`](/reference/configuration/#integrations) option, allowing frameworks and other tools to fill in or change your Lunaria configuration for you.
+
+An integration is an object with a `name` and a `setup` hook, which receives the current `config`, an `updateConfig()` function, and a `logger`:
+
+```js title="lunaria.config.mjs"
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  integrations: [
+    {
+      name: 'my-integration',
+      hooks: {
+        setup: ({ updateConfig }) => {
+          updateConfig({ dashboard: { title: 'My Localization Status' } });
+        },
+      },
+    },
+  ],
+});
+```
+
+In the future, more hooks and functions will be added to the integrations API so you can build even more ambitious projects on top of Lunaria, such as adding `dictionary` support for new file types.
+
+## Runtime API
+
+The Runtime API has been rebuilt around the new `createLunaria()` function. You can use it to get your final configuration, the status of all or individual files, and links to your files on your git hosting platform:
+
+```ts
+import { createLunaria } from '@lunariajs/core';
+
+const lunaria = await createLunaria();
+const config = lunaria.config;
+const status = await lunaria.getFullStatus();
+const fileStatus = await lunaria.getFileStatus('src/content/docs/en/guide.mdx');
+```
+
+Read more in the ["Runtime API"](/reference/runtime/) reference.
+
+## Next steps
+
+You might've noticed it's been a while since the last public release, back in May 2024. Despite that, Lunaria's development has quietly continued in its `v1` branch.
+
+Lunaria v1.0 is an ambitious project, including a completely overhauled dashboard system, an improved GitHub Action experience for maintainers and contributors, and integrations with other frameworks and templates for a more plug-and-play experience.
+
+In fact, most of the changes you see here were originally developed as part of Lunaria v1.0. This release is a way to ease the migration to that future version, as well as to let projects finally benefit from the many improvements made over the last two years.
+
+The v0.2.x release cycle will bring you bug fixes, performance gains, and other improvements sooner, instead of keeping them locked away in the `v1` branch. If you run into anything, please [open an issue on GitHub](https://github.com/lunariajs/lunaria/issues/new/choose).
+
+Although I don't have an ETA for v1.0, I'll continue working on it and looking for ways to fund this work, so I can dedicate more than just my free time and weekends to the project. Stay tuned for more!
+
+## Special thanks
+
+This release was made possible by Lunaria's sponsors: [Chris Swithinbank](https://github.com/delucis), [Nate Moore](https://github.com/natemoo-re), [Nick Gray](https://github.com/nickgraynews), and [Philippe Serhal](https://github.com/serhalp).
+
+If your company or project uses Lunaria, consider supporting its development through [GitHub Sponsors](https://github.com/sponsors/yanthomasdev) or [Open Collective](https://opencollective.com/lunaria).
