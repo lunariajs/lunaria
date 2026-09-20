@@ -82,13 +82,11 @@ export const Body = (config: LunariaConfig, status: LunariaStatus): string => {
 
 	return html`
 		<main>
-			<div class="limit-to-viewport">
-				${renderer.slots.beforeTitle?.(config) ?? ''}
-				<h1>${dashboard.title}</h1>
-				${renderer.slots.afterTitle?.(config) ?? ''}
-				${renderer.overrides.statusByLocale?.(config, status) ?? StatusByLocale(config, status)}
-				${renderer.slots.afterStatusByLocale?.(config) ?? ''}
-			</div>
+			${renderer.slots.beforeTitle?.(config) ?? ''}
+			<h1>${dashboard.title}</h1>
+			${renderer.slots.afterTitle?.(config) ?? ''}
+			${renderer.overrides.statusByLocale?.(config, status) ?? StatusByLocale(config, status)}
+			${renderer.slots.afterStatusByLocale?.(config) ?? ''}
 			${renderer.overrides.statusByFile?.(config, status) ?? StatusByFile(config, status)}
 			${renderer.slots.afterStatusByFile?.(config) ?? ''}
 		</main>
@@ -226,16 +224,18 @@ export const StatusByFile = (config: LunariaConfig, status: LunariaStatus): stri
 		<h2 id="by-file">
 			<a href="#by-file">${dashboard.ui['statusByFile.heading']}</a>
 		</h2>
-		<table class="status-by-file">
-			<thead>
-				<tr>
-					${[dashboard.ui['statusByFile.tableRowFile'], ...locales.map(({ lang }) => lang)].map(
-						(col) => html`<th>${col}</th>`,
-					)}
-				</tr>
-			</thead>
-			${TableBody(config, status)}
-		</table>
+		<div class="table-wrapper" role="region" aria-labelledby="by-file" tabindex="0">
+			<table class="status-by-file">
+				<thead>
+					<tr>
+						${[dashboard.ui['statusByFile.tableRowFile'], ...locales.map(({ lang }) => lang)].map(
+							(col) => html`<th>${col}</th>`,
+						)}
+					</tr>
+				</thead>
+				${TableBody(config, status)}
+			</table>
+		</div>
 		<sup class="capitalize"
 			>${stringFromFormat(dashboard.ui['statusByFile.tableSummaryFormat'], {
 				'{missing_emoji}': dashboard.ui['status.emojiMissing'],
@@ -253,10 +253,13 @@ export const TableBody = (config: LunariaConfig, status: LunariaStatus): string 
 	const { dashboard, locales } = config;
 	const links = createGitHostingLinks(config.repository);
 
+	// TODO(HiDeoo) Revert changes to this component.
 	return html`
 		<tbody>
-			${status.map(
-				(entry) => html`
+			${Array.from({ length: 50 }, () => status)
+				.flat()
+				.map(
+					(entry) => html`
 					<tr>
 						<td>
 							${Link(
@@ -267,7 +270,7 @@ export const TableBody = (config: LunariaConfig, status: LunariaStatus): string 
 						${locales.map(({ lang }) => TableContentStatus(config, entry, lang))}
 					</tr>
 				`,
-			)}
+				)}
 		</tbody>
 	`;
 };
