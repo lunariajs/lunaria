@@ -67,7 +67,7 @@
   },
   "devDependencies": {
     "@types/gettext-parser": "^9.0.0",
-    "@types/node": "^22.20.2",
+    "@types/node": "^26.6.3",
     "@types/picomatch": "^4.0.3"
   },
   "engines": {
