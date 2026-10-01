@@ -57,7 +57,7 @@
     "jiti": "^2.7.0",
     "neotraverse": "^1.0.1",
     "p-all": "^5.0.1",
-    "path-to-regexp": "6.3.0",
+    "path-to-regexp": "8.4.2",
     "picomatch": "^4.0.7",
     "simple-git": "^3.36.0",
     "tinyglobby": "^0.2.17",
