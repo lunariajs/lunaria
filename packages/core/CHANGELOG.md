@@ -1,5 +1,13 @@
 # @lunariajs/core
 
+## 0.2.1
+
+### Patch Changes
+
+- [#186](https://github.com/lunariajs/lunaria/pull/186) [`7aec0d6`](https://github.com/lunariajs/lunaria/commit/7aec0d63481d487855625bd375c7abd62168d260) Thanks [@HiDeoo](https://github.com/HiDeoo)! - Fixes an overflow issue in the dashboard's status by file table on narrow viewports.
+  
+  The table now scrolls horizontally within its own container and no longer has a sticky header row. If you override the `Body` component, the `limit-to-viewport` class and its wrapper element have been removed.
+
 ## 0.2.0
 
 ### Minor Changes
