@@ -18,6 +18,6 @@
     "@lunariajs/core": "workspace:^",
     "astro": "^7.3.2",
     "sharp": "^0.35.5",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
