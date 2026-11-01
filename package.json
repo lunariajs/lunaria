@@ -12,7 +12,7 @@
     "version": "pnpm changeset version && pnpm i --no-frozen-lockfile"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.13",
+    "@biomejs/biome": "2.6.4",
     "@changesets/changelog-github": "^1.0.1",
     "@changesets/cli": "^3.0.2",
     "@total-typescript/tsconfig": "^1.0.4",
