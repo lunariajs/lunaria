@@ -1,5 +1,38 @@
 # @lunariajs/core
 
+## 0.3.0
+
+### Minor Changes
+
+- [#199](https://github.com/lunariajs/lunaria/pull/199) [`af109dc`](https://github.com/lunariajs/lunaria/commit/af109dcb556e929943047c488627d305472063a1) Thanks [@yanthomasdev](https://github.com/yanthomasdev)! - Changes `pattern` matching to work like file paths instead of URLs.
+  
+  - Matching is now case-sensitive. For example, `docs/ES/intro.md` is no longer a file of the `es` locale. If your directories use a different casing than your locales' `lang` (e.g. `pt-BR` and `pt-br`), change one to match the other, or use a [custom parameter](https://lunaria.dev/guides/tracking/#custom-parameters).
+  - `#` and `?` in file paths are now matched like any other character, so parameters like `:name` match file names such as `c#.md`.
+  - A pattern now has to match the entire path. A trailing `/`, `#`, or `?` is no longer ignored.
+
+### Patch Changes
+
+- [#199](https://github.com/lunariajs/lunaria/pull/199) [`af109dc`](https://github.com/lunariajs/lunaria/commit/af109dcb556e929943047c488627d305472063a1) Thanks [@yanthomasdev](https://github.com/yanthomasdev)! - Reports invalid `pattern`s with clear errors.
+  
+  - Syntax errors are now reported with an error pointing to the problem in your pattern. Previously, some of them were silently ignored, so the affected files were never matched.
+  - Patterns that can't build correct paths are now rejected: groups without a parameter (e.g. `doc{s}?`), named capturing groups (e.g. `(?<n>a)`), lookbehinds (e.g. `(?<=a)`), and a trailing `\`.
+  - Separate `source` and `locales` patterns now have to use the same parameters, except for `@lang` and custom parameters.
+  - A pattern now has to include a parameter named exactly like a placeholder. Previously, `:pathname` was accepted because it starts with `path`.
+  - Custom parameter names can now only contain letters, numbers, and underscores.
+  - Paths that don't match their pattern now report an error saying so.
+
+- [#199](https://github.com/lunariajs/lunaria/pull/199) [`af109dc`](https://github.com/lunariajs/lunaria/commit/af109dcb556e929943047c488627d305472063a1) Thanks [@yanthomasdev](https://github.com/yanthomasdev)! - Removes the `path-to-regexp` dependency. Lunaria now uses its own implementation of the same `pattern` syntax.
+
+- [#199](https://github.com/lunariajs/lunaria/pull/199) [`af109dc`](https://github.com/lunariajs/lunaria/commit/af109dcb556e929943047c488627d305472063a1) Thanks [@yanthomasdev](https://github.com/yanthomasdev)! - Fixes several cases where a `pattern` matched the wrong files or built the wrong paths.
+  
+  - Custom parameters with a name starting with `lang` or `path`, like `@langTag`, are now recognized instead of being read as `@lang` followed by `Tag`.
+  - Placeholders used more than once in a pattern are now replaced every time.
+  - When more than one locale could match the same part of a path, the longest value is now used, so `pt-BR` is no longer read as `pt` followed by `-BR`.
+  - Locale `lang` and parameter values are now matched literally, so characters like `.` or `+` in them have no special meaning.
+  - Custom parameters set to an empty string no longer make a pattern invalid.
+  - Escaped placeholders, like `\\@lang`, now match the text `@lang`.
+  - Repeated parameters with both a prefix and a suffix, like `{/:path.}+`, now build correct paths.
+
 ## 0.2.1
 
 ### Patch Changes
