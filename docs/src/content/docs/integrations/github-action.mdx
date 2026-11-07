@@ -14,7 +14,31 @@ The Lunaria GitHub Action comments on pull requests with an overview of how the 
 
 ## Set up the Action
 
-Create a new file in your project at `.github/workflows/lunaria.yml` with the following content, according to the package manager used:
+Create a new file in your project at `.github/workflows/lunaria-trigger.yml` with the following content:
+
+```yml
+name: Lunaria Trigger
+
+on:
+  # Trigger the workflow every time a pull request is opened or synchronized at the target `main` branch
+  # Using a different branch name? Replace `main` with your branch’s name
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main]
+
+# The workflow doesn't need any permissions
+permissions: {}
+
+jobs:
+  trigger:
+    name: Trigger Lunaria Overview
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: echo "Triggering the Lunaria workflow"
+```
+
+Then, create another file at `.github/workflows/lunaria.yml` with the following content, according to the package manager used:
 
 <Tabs syncKey="pkg">
 <TabItem label="npm">
@@ -23,11 +47,10 @@ Create a new file in your project at `.github/workflows/lunaria.yml` with the fo
 name: Lunaria
 
 on:
-  # Trigger the workflow every time a pull request is opened or synchronized at the target `main` branch
-  # Using a different branch name? Replace `main` with your branch’s name
-  pull_request_target:
-    types: [opened, synchronize]
-    branches: [main]
+  # Run every time the `Lunaria Trigger` workflow completes
+  workflow_run:
+    workflows: [Lunaria Trigger]
+    types: [completed]
 
 # Allow this job to clone the repository and comment on the pull request
 permissions:
@@ -56,7 +79,7 @@ jobs:
       - run: npm install
 
       - name: Generate Lunaria Overview
-        uses: lunariajs/action@v0.2.0
+        uses: lunariajs/action@v0.3
 ```
 
 </TabItem>
@@ -66,11 +89,10 @@ jobs:
 name: Lunaria
 
 on:
-  # Trigger the workflow every time a pull request is opened or synchronized at the target `main` branch
-  # Using a different branch name? Replace `main` with your branch’s name
-  pull_request_target:
-    types: [opened, synchronize]
-    branches: [main]
+  # Run every time the `Lunaria Trigger` workflow completes
+  workflow_run:
+    workflows: [Lunaria Trigger]
+    types: [completed]
 
 # Allow this job to clone the repository and comment on the pull request
 permissions:
@@ -102,7 +124,7 @@ jobs:
       - run: pnpm install
 
       - name: Generate Lunaria Overview
-        uses: lunariajs/action@v0.2.0
+        uses: lunariajs/action@v0.3
 ```
 
 </TabItem>
@@ -112,11 +134,10 @@ jobs:
 name: Lunaria
 
 on:
-  # Trigger the workflow every time a pull request is opened or synchronized at the target `main` branch
-  # Using a different branch name? Replace `main` with your branch’s name
-  pull_request_target:
-    types: [opened, synchronize]
-    branches: [main]
+  # Run every time the `Lunaria Trigger` workflow completes
+  workflow_run:
+    workflows: [Lunaria Trigger]
+    types: [completed]
 
 # Allow this job to clone the repository and comment on the pull request
 permissions:
@@ -145,13 +166,13 @@ jobs:
       - run: yarn install
 
       - name: Generate Lunaria Overview
-        uses: lunariajs/action@v0.2.0
+        uses: lunariajs/action@v0.3
 ```
 
 </TabItem>
 </Tabs>
 
-If everything was set up properly, the Action will now comment on every new, or updated pull request that has files tracked by Lunaria (those who do not, won't receive a comment).
+Once both files are merged into your default branch, the Action will comment on every new, or updated pull request that has files tracked by Lunaria (those who do not, won't receive a comment).
 
 :::tip[Changing the comment's author]
 Normally, comments made by the Action will be authored by `github-actions[bot]`. You can change this behavior by [defining a different `token` input](/integrations/github-action/#inputs) in your workflow file, so that the comments will be authored by the user or bot whose the token comes from.
@@ -167,7 +188,7 @@ This example assumes the `@lunariajs/core` package was installed in the `docs/pa
 
 ```yml ins={4} mark="docs"
 - name: Generate Lunaria Overview
-  uses: lunariajs/action@v0.2.0
+  uses: lunariajs/action@v0.3
   with:
     working-directory: docs
 ```
@@ -183,17 +204,17 @@ By default, the Action won't run on a private repository for a lack of permissio
 
    ```yml ins={7} mark="PAT"
    - name: Checkout
-       uses: actions/checkout@v7
-       with:
-         # Necessary for Lunaria to work properly
-         # Makes the action clone the entire git history
-         fetch-depth: 0
-         token: ${{ secrets.PAT }}
+     uses: actions/checkout@v7
+     with:
+       # Necessary for Lunaria to work properly
+       # Makes the action clone the entire git history
+       fetch-depth: 0
+       token: ${{ secrets.PAT }}
    ```
 
    ```yml ins={4} mark="PAT"
    - name: Generate Lunaria Overview
-     uses: lunariajs/action@v0.2.0
+     uses: lunariajs/action@v0.3
      with:
        token: ${{ secrets.PAT }}
    ```
@@ -208,7 +229,7 @@ By default, the Action won't run on a private repository for a lack of permissio
 
   ```yml mark={4}
   - name: Generate Lunaria Overview
-    uses: lunariajs/action@v0.2.0
+    uses: lunariajs/action@v0.3
     with:
       token: ${{ secrets.PAT }}
   ```
@@ -217,7 +238,7 @@ By default, the Action won't run on a private repository for a lack of permissio
 
   ```yml mark={4}
   - name: Generate Lunaria Overview
-    uses: lunariajs/action@v0.2.0
+    uses: lunariajs/action@v0.3
     with:
       working-directory: docs
   ```
