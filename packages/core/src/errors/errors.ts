@@ -27,6 +27,29 @@ export const InvalidFilesPattern = {
 		`The file pattern \`${pattern}\` is missing a valid path parameter. Be sure to add at least one to your pattern string.`,
 } satisfies ErrorContext;
 
+export const InvalidPatternSyntax = {
+	name: 'InvalidPatternSyntax',
+	title: 'Invalid `files` pattern syntax was found.',
+	message: (pattern: string, reason: string, index?: string) => {
+		const pointer = index === undefined ? '' : `\n\n  ${pattern}\n  ${' '.repeat(Number(index))}^`;
+		return `The file pattern \`${pattern}\` is invalid: ${reason}.${pointer}`;
+	},
+} satisfies ErrorContext;
+
+export const MismatchedPatternParameters = {
+	name: 'MismatchedPatternParameters',
+	title: 'The `source` and `locales` patterns use different parameters.',
+	message: (source: string, locales: string, parameter: string, where: string) =>
+		`The \`source\` pattern \`${source}\` and the \`locales\` pattern \`${locales}\` must use the same parameters, but the ${parameter} is only used in the \`${where}\` pattern.`,
+} satisfies ErrorContext;
+
+export const PathNotMatched = {
+	name: 'PathNotMatched',
+	title: 'A path does not match its `files` pattern.',
+	message: (path: string, pattern: string) =>
+		`The path \`${path}\` does not match the file pattern \`${pattern}\`. Verify the \`pattern\` of the corresponding files' entry.`,
+} satisfies ErrorContext;
+
 export const FileNotFound = {
 	name: 'FileNotFound',
 	title: 'File not found.',

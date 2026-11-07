@@ -128,7 +128,7 @@ The order of the entries in `files` will be respected and displayed accordingly 
 
 - `include` — an array of glob patterns of the source file(s) to be tracked, e.g. `['src/content/docs/en/**/*.mdx']`.
 - `exclude` — an array of glob patterns to be ignored from being tracked, defaults to `['node_modules']`.
-- `pattern` — a [path-to-regexp pattern](https://github.com/pillarjs/path-to-regexp) of the file(s) paths, e.g. `'src/content/docs/@lang/@path'` (`@lang` and `@path` are custom syntax provided by Lunaria, in more complex cases can be changed for normal `:lang` and `:path` parameters). When the source and localized files follow different structures, an object with a `source` and a `locales` pattern can be used instead, e.g. `{ source: 'src/content/docs/@path', locales: 'src/content/docs/@lang/@path' }`.
+- `pattern` — a [pattern](/reference/patterns/) describing the paths of the file(s), e.g. `'src/content/docs/@lang/@path'`, where `@lang` and `@path` are [placeholders](/reference/patterns/#placeholders) for the locale and the rest of the path. When the source and localized files follow different structures, an object with a `source` and a `locales` pattern can be used instead, e.g. `{ source: 'src/content/docs/@path', locales: 'src/content/docs/@lang/@path' }`.
 
 #### File types
 
