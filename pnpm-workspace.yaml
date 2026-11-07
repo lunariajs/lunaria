@@ -3,6 +3,9 @@ packages:
   - 'examples/**/*'
   - 'docs'
 
-# Temporary override while starlight-blog isn't updated to the latest Satteri version
-overrides:
-  'starlight-blog>satteri': ^0.10.5
+# @astrojs/astro2tsx depends on @emnapi/core 1.x without declaring @emnapi/runtime, so pnpm can pair it with an
+# incompatible @emnapi/runtime 2.0 beta from elsewhere in the tree, which crashes `astro check`.
+packageExtensions:
+  '@astrojs/astro2tsx@0.1.3':
+    dependencies:
+      '@emnapi/runtime': 1.11.3
