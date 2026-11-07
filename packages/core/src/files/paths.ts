@@ -1,12 +1,108 @@
-import { compile, type MatchResult, match } from 'path-to-regexp';
 import type { LunariaConfig, Pattern } from '../config/types.ts';
-import { InvalidFilesPattern } from '../errors/errors.ts';
-import { stringFromFormat } from '../utils/utils.ts';
+import {
+	InvalidFilesPattern,
+	InvalidPatternSyntax,
+	MismatchedPatternParameters,
+	PathNotMatched,
+} from '../errors/errors.ts';
+import {
+	compile,
+	escapeString,
+	type MatchFunction,
+	match,
+	type PathFunction,
+	PatternError,
+	parse,
+} from './patterns.ts';
 import type { PathResolver } from './types.ts';
 
-/** Returns if a pattern has parameters or not */
-function hasParameters(pattern: string, parameters: string[]) {
-	return parameters.some((parameter) => pattern.includes(parameter));
+type PathParams = Record<string | number, unknown>;
+
+interface PreparedPattern {
+	pattern: string;
+	names: Array<string | number>;
+	match: MatchFunction<PathParams>;
+	compile: PathFunction<PathParams>;
+}
+
+/**
+ * Replaces every placeholder in a pattern with its parameter, preferring the longest name (e.g. `@langTag` over `@lang`).
+ * Also returns the original index of each character, so errors can point to what the user wrote.
+ */
+function replacePlaceholders(pattern: string, placeholders: Record<string, string>) {
+	const keys = Object.keys(placeholders).sort((a, b) => b.length - a.length);
+	const origins: number[] = [];
+	let result = '';
+	let index = 0;
+
+	while (index < pattern.length) {
+		// Escaped characters are copied as-is, so `\@lang` isn't replaced.
+		if (pattern.charAt(index) === '\\') {
+			const escaped = pattern.slice(index, index + 2);
+			result += escaped;
+			for (let i = 0; i < escaped.length; i++) origins.push(index + i);
+			index += escaped.length;
+			continue;
+		}
+
+		const key = keys.find((key) => pattern.startsWith(key, index));
+
+		if (key) {
+			const replacement = placeholders[key] ?? '';
+			result += replacement;
+			for (let i = 0; i < replacement.length; i++) origins.push(index);
+			index += key.length;
+			continue;
+		}
+
+		result += pattern.charAt(index);
+		origins.push(index);
+		index++;
+	}
+
+	origins.push(pattern.length);
+
+	return { result, origins };
+}
+
+/** Replaces the placeholders of a pattern and parses it once, so it can be reused for every path. */
+function preparePattern(
+	original: string,
+	placeholders: Record<string, string>,
+	validNames: string[],
+): PreparedPattern {
+	const { result: pattern, origins } = replacePlaceholders(original, placeholders);
+
+	try {
+		const tokens = parse(pattern);
+
+		const hasValidParameter = tokens.some(
+			(token) =>
+				typeof token !== 'string' &&
+				typeof token.name === 'string' &&
+				validNames.includes(token.name),
+		);
+
+		if (!hasValidParameter) {
+			throw new Error(InvalidFilesPattern.message(original));
+		}
+
+		const names = tokens.flatMap((token) => (typeof token === 'string' ? [] : [token.name]));
+
+		return { pattern, names, match: match(tokens), compile: compile(tokens) };
+	} catch (error) {
+		if (error instanceof PatternError) {
+			const index = origins[error.index] ?? original.length;
+			throw new Error(InvalidPatternSyntax.message(original, error.reason, String(index)));
+		}
+
+		// An invalid regular expression in a parameter, e.g. `:name([a-z)`.
+		if (error instanceof SyntaxError) {
+			throw new Error(InvalidPatternSyntax.message(original, error.message));
+		}
+
+		throw error;
+	}
 }
 
 /**
@@ -22,10 +118,16 @@ export function createPathResolver(
 	 * We have to change the accepted locales for each pattern, since the source pattern
 	 * should only accept the source locale, and the locales pattern should accept all the other locales.
 	 */
-	const joinedLocales = locales.map((locale) => locale.lang).join('|');
+	// Values are escaped to match literally and sorted so `pt-BR` is tried before `pt`.
+	// A single empty value becomes `|`, since a parameter can't have an empty regular expression.
+	const valuesPattern = (values: string[]) =>
+		[...values]
+			.sort((a, b) => b.length - a.length)
+			.map(escapeString)
+			.join('|') || '|';
 
 	// @lang - Matches the locale part of the path.
-	const langPattern = (locales: string) => `:lang(${locales})`;
+	const langPattern = (langs: string[]) => `:lang(${valuesPattern(langs)})`;
 	// @path - Matches the rest of the path.
 	const pathPattern = ':path(.*)';
 
@@ -35,22 +137,18 @@ export function createPathResolver(
 
 	const placeholders = (source: boolean): Record<string, string> => {
 		const basePlaceholders = {
-			'@lang': langPattern(source ? sourceLocale.lang : joinedLocales),
+			'@lang': langPattern(source ? [sourceLocale.lang] : locales.map((locale) => locale.lang)),
 			'@path': pathPattern,
 		};
 
 		if (customParameters) {
-			const placeholderValue = (key: string) => {
-				// biome-ignore lint/style/noNonNullAssertion: These are ensured to exist by the validation schema.
-				const sourceParameterValue = sourceLocale.parameters![key];
-				// biome-ignore lint/style/noNonNullAssertion: see above
-				const localeParameterValue = locales.map((locale) => locale.parameters![key]).join('|');
-				return source ? sourceParameterValue : localeParameterValue;
-			};
+			// The parameters of every locale are ensured to exist by the validation schema.
+			const placeholderValues = (key: string) =>
+				(source ? [sourceLocale] : locales).map((locale) => locale.parameters?.[key] ?? '');
 
 			const customPlaceholders = Object.keys(customParameters).reduce(
 				(acc, param) => {
-					acc[`@${param}`] = `:${param}(${placeholderValue(param)})`;
+					acc[`@${param}`] = `:${param}(${valuesPattern(placeholderValues(param))})`;
 					return acc;
 				},
 				{} as Record<string, string>,
@@ -71,9 +169,6 @@ export function createPathResolver(
 	const baseSourcePattern = typeof pattern === 'string' ? pattern : pattern.source;
 	const baseLocalesPattern = typeof pattern === 'string' ? pattern : pattern.locales;
 
-	const sourcePattern = stringFromFormat(baseSourcePattern, placeholders(true));
-	const localesPattern = stringFromFormat(baseLocalesPattern, placeholders(false));
-
 	/*
 	 * Originally, this was a strict check to see if the source pattern had the `@path` parameter
 	 * and the locales pattern had the `@lang` and `@path` parameter, which was the assumpting for the way
@@ -83,18 +178,35 @@ export function createPathResolver(
 	 * - Locales path: `src/i18n/pt-BR.yml`
 	 * - Pattern: `src/i18n/@tag.yml`
 	 */
-	const validParameters = [
-		':lang',
-		':path',
-		...(customParameters ? Object.keys(customParameters).map((param) => `:${param}`) : []),
-	];
+	const validNames = ['lang', 'path', ...(customParameters ? Object.keys(customParameters) : [])];
 
-	if (!hasParameters(sourcePattern, validParameters)) {
-		throw new Error(InvalidFilesPattern.message(baseSourcePattern));
-	}
+	const source = preparePattern(baseSourcePattern, placeholders(true), validNames);
+	const localized = preparePattern(baseLocalesPattern, placeholders(false), validNames);
 
-	if (!hasParameters(localesPattern, validParameters)) {
-		throw new Error(InvalidFilesPattern.message(baseLocalesPattern));
+	// Paths are built from the values matched by the other pattern, so both need the same parameters,
+	// except for `lang` and custom parameters, which come from the target locale's configuration.
+	if (typeof pattern !== 'string') {
+		const fromConfig = new Set<string | number>(['lang', ...Object.keys(customParameters ?? {})]);
+		const sourceOnly = source.names.find(
+			(name) => !fromConfig.has(name) && !localized.names.includes(name),
+		);
+		const localesOnly = localized.names.find(
+			(name) => !fromConfig.has(name) && !source.names.includes(name),
+		);
+		const mismatch = sourceOnly ?? localesOnly;
+
+		if (mismatch !== undefined) {
+			const parameter =
+				typeof mismatch === 'string' ? `\`:${mismatch}\`` : `unnamed parameter ${mismatch + 1}`;
+			throw new Error(
+				MismatchedPatternParameters.message(
+					pattern.source,
+					pattern.locales,
+					parameter,
+					sourceOnly !== undefined ? 'source' : 'locales',
+				),
+			);
+		}
 	}
 
 	return {
@@ -109,34 +221,30 @@ export function createPathResolver(
 		 * the locales path strictly requires the `@lang` parameter that is limited to the configured locales.
 		 */
 		// `match` returns an object if true, here we're forcing it to return a boolean.
-		isSourcePath: (path: string) => !!match(sourcePattern)(path) && !match(localesPattern)(path),
-		isLocalesPath: (path: string) => !!match(localesPattern)(path),
+		isSourcePath: (path: string) => !!source.match(path) && !localized.match(path),
+		isLocalesPath: (path: string) => !!localized.match(path),
 		toPath: (fromPath: string, toLang: string) => {
-			const sourceMatch = match(sourcePattern)(fromPath) as
-				| MatchResult<{ lang?: string; path: string }>
-				| false;
-			const localeMatch = match(localesPattern)(fromPath) as
-				| MatchResult<{ lang?: string; path: string }>
-				| false;
-			const fromMatch = localeMatch || sourceMatch;
+			const fromMatch = localized.match(fromPath) || source.match(fromPath);
 
 			if (!fromMatch) {
-				throw new Error(InvalidFilesPattern.message(fromPath));
+				const displayPattern =
+					typeof pattern === 'string'
+						? pattern
+						: `${pattern.source} (source) - ${pattern.locales} (locales)`;
+				throw new Error(PathNotMatched.message(fromPath, displayPattern));
 			}
 
 			// Since the path for the same source and localized content can have different patterns,
 			// we have to check if the `toLang` is from the sourceLocale (i.e. source content) or
 			// from the localized content, meaning we get the correct path always.
-			const selectedPattern = locales.map((locale) => locale.lang).includes(toLang)
-				? localesPattern
-				: sourcePattern;
+			const target = locales.map((locale) => locale.lang).includes(toLang) ? localized : source;
 
 			// We inject the custom parameters as-is for the target locale.
 			const localeParameters = [sourceLocale, ...locales].find(
 				(locale) => locale.lang === toLang,
 			)?.parameters;
 
-			return compile<{ lang?: string; path: string }>(selectedPattern)({
+			return target.compile({
 				// We extract and inject any parameters that could be found
 				// from the initial path to the resulting path, this is what
 				// enables the path inferring.
@@ -149,7 +257,7 @@ export function createPathResolver(
 				lang: toLang,
 			});
 		},
-		sourcePattern: sourcePattern,
-		localesPattern: localesPattern,
+		sourcePattern: source.pattern,
+		localesPattern: localized.pattern,
 	};
 }

@@ -57,13 +57,17 @@ Lunaria's glob patterns are powered by [tinyglobby](https://github.com/Superchup
 - `**/*.{md,mdx}`: Matches all `.md` and `.mdx` files on the directory and its subdirectories.
 - `**/!(index).md`: Matches all `.md` files on the directory and its subdirectories, except for the `index.md` file.
 
+:::caution
+Some characters, like parentheses, have a special meaning in glob patterns. To track directories or files with these characters in their names, see [paths with special characters](#paths-with-special-characters).
+:::
+
 ### `pattern`
 
-The `pattern` field expects a [path-to-regexp](https://github.com/pillarjs/path-to-regexp) string that will be used to extract the shared path of files and infer their relation. Lunaria adds the `@lang` and `@path` placeholders to help you indicate where the locale and the rest of the path should be added in.
+The `pattern` field describes how the paths of your files are structured. Lunaria uses it to tell source and localized files apart, and to find the path of each file in every other locale.
 
-In very few cases, `@lang` and `@path` might not correctly represent your project's file structure. Internally, these placeholders are replaced with slightly opinionated `:lang` and `:path` path parameters. You can also use these parameters instead of placeholders, tweaking them with [prefixes, suffixes, and/or modifiers](https://github.com/pillarjs/path-to-regexp/tree/v6.3.0#parameters) to match your project's file structure.
+In most projects, it's enough to mark where the locale and the rest of the path go with the `@lang` and `@path` placeholders, e.g. `'src/content/docs/@lang/@path'`. These work wherever the locale is in the path, including in file names, e.g. `'pages/@path.@lang.mdx'` for files like `pages/guides/intro.en.mdx`.
 
-For example, to support Nextra's rather unique i18n file structure, you could use the following pattern using `:path+` instead of `@path`:
+When placeholders aren't enough to describe your file structure, you can add [parameters](/reference/patterns/#parameters) to match the other parts of a path. For example, the following pattern uses a `:collection` parameter to track several content collections, each with its own locale directories:
 
 ```js title="lunaria.config.mjs" mark={7}
 import { defineConfig } from '@lunariajs/core/config';
@@ -71,27 +75,32 @@ import { defineConfig } from '@lunariajs/core/config';
 export default defineConfig({
   files: [
     {
-      include: ['pages/**/*.en.mdx'],
-      pattern: 'pages/:path+.@lang.mdx',
+      include: ['src/content/*/en/**/*.md'],
+      pattern: 'src/content/:collection/@lang/@path',
       type: 'universal',
     },
   ],
 });
 ```
 
+In this example, `src/content/blog/en/post.md` and `src/content/docs/en/intro.md` are both tracked, and their Spanish versions are expected at `src/content/blog/es/post.md` and `src/content/docs/es/intro.md`.
+
+To learn everything a pattern accepts, see the [pattern syntax reference](/reference/patterns/).
+
 #### Different source and localized paths
 
 When the source and localized files don't share the same structure, `pattern` also accepts an object with a `source` pattern for the source files and a `locales` pattern for the localized files. 
 
-This is helpful for projects where the source content lives in the root of the content directory while localizations live in a subdirectory per locale:
+This is helpful for projects where the source content lives in the root of the content directory while localizations live in a subdirectory per locale. Since `include` should only match the source files, the locale subdirectories are left out with `exclude`:
 
-```js title="lunaria.config.mjs" mark={7-10}
+```js title="lunaria.config.mjs" mark={7-11}
 import { defineConfig } from '@lunariajs/core/config';
 
 export default defineConfig({
   files: [
     {
       include: ['src/content/docs/**/*.md'],
+      exclude: ['src/content/docs/{es,pt}/**'],
       pattern: {
         source: 'src/content/docs/@path',
         locales: 'src/content/docs/@lang/@path',
@@ -141,6 +150,40 @@ export default defineConfig({
 :::note
 All locales, including the `sourceLocale`, must set the same `parameters` keys.
 :::
+
+#### Paths with special characters
+
+Some directory names, like the `app/(docs)` route groups of Next.js, contain characters with a special meaning in both glob patterns and Lunaria's patterns. To track these files, escape the characters with a backslash in both `include` and `pattern`. Backslashes have to be doubled inside of JavaScript strings:
+
+```js title="lunaria.config.mjs" mark={6-7}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  files: [
+    {
+      include: ['app/\\(docs\\)/en/**/*.md'],
+      pattern: 'app/\\(docs\\)/@lang/@path',
+      type: 'universal',
+    },
+  ],
+});
+```
+
+Without the backslashes, the glob `app/(docs)/en/**/*.md` matches the files inside of `app/docs/en/` instead, and the pattern reads `(docs)` as a [regular expression](/reference/patterns/#regular-expressions). See the [escaping reference](/reference/patterns/#escaping) for every character that has to be escaped.
+
+#### Common file structures
+
+The following patterns match the file structures of a few popular tools:
+
+| Tool                         | Source file                    | Localized file                                            | Pattern                                                                                        |
+| ---------------------------- | ------------------------------ | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Starlight                    | `src/content/docs/en/guide.md` | `src/content/docs/es/guide.md`                            | `'src/content/docs/@lang/@path'`                                                               |
+| Starlight (root locale)      | `src/content/docs/guide.md`    | `src/content/docs/es/guide.md`                            | `{ source: 'src/content/docs/@path', locales: 'src/content/docs/@lang/@path' }`                |
+| Docusaurus                   | `docs/guide.md`                | `i18n/es/docusaurus-plugin-content-docs/current/guide.md` | `{ source: 'docs/@path', locales: 'i18n/@lang/docusaurus-plugin-content-docs/current/@path' }` |
+| Nextra (Pages Router)        | `pages/guide.en.mdx`           | `pages/guide.es.mdx`                                      | `'pages/@path.@lang.mdx'`                                                                      |
+| Hugo (filename translations) | `content/guide.md`             | `content/guide.es.md`                                     | `{ source: 'content/@path.md', locales: 'content/@path.@lang.md' }`                            |
+
+When the source and localized files share a directory, like in Starlight (root locale) or Hugo (filename translations), use [`exclude`](#exclude) so that `include` only matches the source files.
 
 ### `type`
 

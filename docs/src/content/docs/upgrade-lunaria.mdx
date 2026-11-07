@@ -136,15 +136,16 @@ The `@locales` placeholder has also been removed.
 
 #### What should I do?
 
-If your source files don't include the locale in their path, replace the `pattern` string with an object:
+If your source files don't include the locale in their path, replace the `pattern` string with an object, and exclude the localized files from `include`:
 
-```js title="lunaria.config.mjs" del={7} ins={8-11}
+```js title="lunaria.config.mjs" del={8} ins={7,9-12}
 import { defineConfig } from '@lunariajs/core/config';
 
 export default defineConfig({
   files: [
     {
       include: ['src/content/docs/**/*.mdx'],
+      exclude: ['src/content/docs/pt/**'],
       pattern: 'src/content/docs/@lang/@path',
       pattern: {
         source: 'src/content/docs/@path',

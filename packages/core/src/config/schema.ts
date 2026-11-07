@@ -68,7 +68,20 @@ const LunariaIntegrationSchema = z.object({
 export const LocaleSchema = z.object({
 	label: z.string(),
 	lang: z.string(),
-	parameters: z.record(z.string(), z.string()).optional(),
+	parameters: z
+		.record(z.string(), z.string())
+		// Parameter names are used as pattern parameters, which only accept letters, numbers, and underscores.
+		.superRefine((parameters, ctx) => {
+			for (const name of Object.keys(parameters)) {
+				if (/^[A-Za-z0-9_]+$/.test(name)) continue;
+				ctx.addIssue({
+					code: 'custom',
+					path: [name],
+					message: `\`${name}\` is not a valid parameter name. Parameter names can only contain letters, numbers, and underscores`,
+				});
+			}
+		})
+		.optional(),
 });
 
 // We need both of these schemas so that we can extend the Lunaria config

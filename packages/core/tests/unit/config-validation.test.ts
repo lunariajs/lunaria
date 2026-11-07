@@ -144,6 +144,22 @@ describe('Configuration validation', () => {
 		);
 	});
 
+	it('should only accept parameter names usable in a pattern', () => {
+		const withParameters = (parameters: Record<string, string>) => ({
+			...sampleValidConfig,
+			sourceLocale: { lang: 'en', label: 'English', parameters },
+			locales: [{ label: 'Spanish', lang: 'es', parameters }],
+		});
+
+		// `@my-tag` would be read as `@my` followed by `-tag`.
+		assert.throws(
+			() => validateFinalConfig(withParameters({ 'my-tag': 'x' })),
+			/Parameter names can only contain letters, numbers, and underscores/,
+		);
+		assert.throws(() => validateFinalConfig(withParameters({ 'my tag': 'x' })));
+		assert.doesNotThrow(() => validateFinalConfig(withParameters({ my_tag2: 'x' })));
+	});
+
 	it('should throw when a locale omits configured parameters', () => {
 		assert.throws(() =>
 			validateFinalConfig({

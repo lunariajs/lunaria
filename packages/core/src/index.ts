@@ -10,6 +10,7 @@ import type { LunariaConfig, Pattern } from './config/types.ts';
 import { CONSOLE_LEVELS } from './constants.ts';
 import { FileNotFound, FilesEntryNotFound, ShallowRepositoryFound } from './errors/errors.ts';
 import { createPathResolver } from './files/paths.ts';
+import type { PathResolver } from './files/types.ts';
 import { runSetupHook } from './integrations/integrations.ts';
 import { LunariaGitInstance } from './status/git.ts';
 import { getMissingDictionaryKeys } from './status/status.ts';
@@ -34,6 +35,8 @@ export class Lunaria {
 	#hash: string;
 	#cwd: string;
 	#cache: Record<string, string>;
+	/** Path resolvers by pattern, so each pattern is only parsed once. */
+	#pathResolvers = new Map<string, PathResolver>();
 
 	constructor(
 		config: LunariaConfig,
@@ -140,7 +143,13 @@ export class Lunaria {
 
 	/** Returns a path resolver for the specified pattern. */
 	getPathResolver(pattern: Pattern) {
-		return createPathResolver(pattern, this.config.sourceLocale, this.config.locales);
+		const key = JSON.stringify(pattern);
+		const cached = this.#pathResolvers.get(key);
+		if (cached) return cached;
+
+		const resolver = createPathResolver(pattern, this.config.sourceLocale, this.config.locales);
+		this.#pathResolvers.set(key, resolver);
+		return resolver;
 	}
 
 	/** Finds the matching `files` entry for the specified path. */

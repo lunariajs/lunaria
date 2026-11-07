@@ -1,0 +1,133 @@
+---
+title: Pattern Syntax
+description: A reference of the syntax accepted by the pattern of your tracked files.
+sidebar:
+  order: 1
+---
+
+The `pattern` of a [`files`](/reference/configuration/#files-required) entry describes the paths of its files. Lunaria matches each path against it to find which locale a file belongs to, and fills it in with the values of another locale to build the path of that locale's version of the file.
+
+To learn how to write a pattern for your project, see the [tracking guide](/guides/tracking/#pattern).
+
+## Matching rules
+
+- A pattern matches the entire path, from start to end.
+- Matching is case-sensitive.
+- Any text outside of [placeholders](#placeholders) and [parameters](#parameters) is matched exactly as written.
+- Paths are relative to the directory Lunaria runs in, the same as the globs in `include`. They use `/` as the separator, and never start with `./` or `/`.
+- Patterns aren't glob patterns. `*` and `?` are [modifiers](#modifiers), so a pattern like `docs/@lang/*.md` is invalid.
+
+## Building paths
+
+To build the path of a file in another locale, Lunaria fills in the pattern of that locale with the values matched in the original path. `@lang` and [custom parameters](/guides/tracking/#custom-parameters) take the values of the target locale instead.
+
+For example, with the pattern `src/content/docs/@lang/@path`, the Spanish path of `src/content/docs/en/guides/intro.md` is `src/content/docs/es/guides/intro.md`.
+
+Each value also has to match the [regular expression](#regular-expressions) of its parameter in the target pattern.
+
+## Placeholders
+
+Placeholders are replaced with a [parameter](#parameters) before matching:
+
+| Placeholder | Replaced with                       | Matches                                                       |
+| ----------- | ----------------------------------- | ------------------------------------------------------------- |
+| `@lang`     | `:lang`, with the `lang` of locales | The `lang` of the source locale or of one of the other locales |
+| `@path`     | `:path(.*)`                         | Any text, including `/` and empty text                        |
+| `@<name>`   | `:<name>`, with the values of a [custom parameter](/guides/tracking/#custom-parameters) | The value of the parameter for the source locale or for one of the other locales |
+
+For source files, `@lang` and custom parameters only match the values of the `sourceLocale`. For localized files, they match the values of any of the `locales`. 
+
+For example, `src/content/docs/@lang/@path` becomes:
+
+- `src/content/docs/:lang(en)/:path(.*)` for source files.
+- `src/content/docs/:lang(es|pt)/:path(.*)` for localized files.
+
+The following rules apply to placeholders:
+
+- Every pattern must include at least one placeholder, or a parameter named `lang`, `path`, or after a custom parameter.
+- The values of locales are matched literally, e.g. the `.` in a `lang` of `zh.TW` only matches a `.`.
+- When more than one value could match the same part of a path, the longest one is used. For example, with the `pt` and `pt-BR` locales, `docs/@lang-@path` matches `docs/pt-BR-intro.md` as a `pt-BR` file.
+- When the name of a placeholder starts with the name of another, the longest name is used. For example, `@langTag` is the `langTag` custom parameter, not `@lang` followed by the text `Tag`.
+
+## Parameters
+
+### Named parameters
+
+A named parameter is written as `:` followed by a name made of letters, numbers, and underscores. Without a [regular expression](#regular-expressions), it matches one or more characters up to the next `/`.
+
+| Pattern                               | Matches                            | Doesn't match                        |
+| ------------------------------------- | ---------------------------------- | ------------------------------------ |
+| `src/content/:collection/@lang/@path` | `src/content/blog/en/2024/post.md` | `src/content/blog/drafts/en/post.md` |
+| `src/@lang/:name.md`                  | `src/en/intro.md`                  | `src/en/guides/intro.md`             |
+
+### Regular expressions
+
+A parameter followed by a [regular expression](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions) between parentheses only matches that regular expression, e.g. `:year(\\d{4})`. A regular expression between parentheses without a name is an unnamed parameter, identified by its position among the other unnamed parameters.
+
+| Pattern                                | Matches                 | Doesn't match              |
+| -------------------------------------- | ----------------------- | -------------------------- |
+| `blog/@lang/:year(\\d{4})/@path`       | `blog/en/2024/recap.md` | `blog/en/drafts/recap.md`  |
+| `docs/@lang/:name((?!draft)[^/]+).md`  | `docs/en/intro.md`      | `docs/en/draft-intro.md`   |
+| `docs/@lang/(v\\d+)/@path`             | `docs/en/v2/intro.md`   | `docs/en/latest/intro.md`  |
+
+The regular expression of a parameter:
+
+- Can't contain capturing groups, including named ones like `(?<name>...)`. Non-capturing groups like `(?:...)` are allowed.
+- Can't contain lookbehinds. Lookaheads can only check the value of the parameter, not the text after it.
+- Can't start with `?`.
+- Has to escape parentheses that are part of the text to match, e.g. `\\(`.
+
+### Modifiers
+
+A modifier after a parameter changes how many times it can appear:
+
+| Modifier | Meaning                                 |
+| -------- | --------------------------------------- |
+| `?`      | The parameter is optional.              |
+| `+`      | The parameter repeats one or more times. |
+| `*`      | The parameter repeats zero or more times. |
+
+| Pattern                             | Matches                                              | Doesn't match                |
+| ----------------------------------- | ---------------------------------------------------- | ---------------------------- |
+| `docs/:version(v\\d+)?/@lang/@path` | `docs/v2/en/intro.md` and `docs/en/intro.md`         | `docs/latest/en/intro.md`    |
+| `pages/:path+.@lang.mdx`            | `pages/index.en.mdx` and `pages/guides/intro.en.mdx` | `pages/index.mdx`            |
+| `pages/:path*/index.@lang.mdx`      | `pages/index.en.mdx` and `pages/guides/index.en.mdx` | `pages/guides/intro.en.mdx`  |
+
+A repeated parameter must have a [prefix](#prefixes) or a suffix, which separates each repetition.
+
+An optional parameter without a regular expression matches any directory name, including the `lang` of a locale. For example, `docs/:version?/@lang/@path` matches `docs/en/es/intro.md` as the Spanish file `intro.md` of the version `en`.
+
+### Prefixes
+
+A `/` or `.` right before a parameter is its prefix. A prefix is optional or repeated along with its parameter. For example, in `docs/:version(v\\d+)?/@lang/@path`, the `/` before `:version` is skipped together with it in `docs/en/intro.md`.
+
+### Groups
+
+Curly braces around a parameter set its prefix and suffix: the text before the parameter inside the braces is its prefix, and the text after it is its suffix. A [modifier](#modifiers) after the closing brace applies to the whole group.
+
+| Pattern                                       | Matches                                                         | Doesn't match                    |
+| --------------------------------------------- | --------------------------------------------------------------- | -------------------------------- |
+| `src/i18n/messages{-:namespace}?.@lang.json`  | `src/i18n/messages.en.json` and `src/i18n/messages-auth.en.json` | `src/i18n/messages_auth.en.json` |
+
+Each group must contain exactly one parameter, and groups can't be nested.
+
+## Escaping
+
+The characters `:`, `(`, `)`, `{`, `}`, `?`, `+`, `*`, and `\` have a special meaning in a pattern. A backslash before one of them, or before a placeholder, matches it as text.
+
+| Pattern                      | Matches                  | Doesn't match          |
+| ---------------------------- | ------------------------ | ---------------------- |
+| `app/\\(docs\\)/@lang/@path` | `app/(docs)/en/intro.md` | `app/docs/en/intro.md` |
+| `docs/\\@lang/@lang/@path`   | `docs/@lang/en/intro.md` | `docs/en/en/intro.md`  |
+
+Any other character, like `#`, `-`, or `_`, is matched as text without escaping.
+
+An invalid pattern, e.g. one with a `?` that isn't escaped, makes Lunaria show an error pointing to the position of the problem.
+
+## Source and locales patterns
+
+A `pattern` can be a string, used for both the source and localized files, or an object with a `source` pattern for the source files and a `locales` pattern for the localized files.
+
+A path that matches the `locales` pattern belongs to a localized file. Otherwise, a path that matches the `source` pattern belongs to a source file. For example, with `{ source: 'docs/@path', locales: 'docs/@lang/@path' }`, `docs/es/intro.md` matches both patterns and belongs to a localized file.
+
+The parameters of both patterns are connected by their name, or by their position for unnamed parameters. Every parameter used in one of the patterns must also be used in the other, except for `@lang` and custom parameters, which take the values of each locale. Otherwise, Lunaria shows an error.
