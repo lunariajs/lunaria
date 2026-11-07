@@ -1,0 +1,52 @@
+---
+title: Upgrade Lunaria
+description: How to upgrade your project to the latest version of Lunaria.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+This page explains how to update Lunaria in your project, and lists the guides for every release with breaking changes.
+
+## Upgrade to the latest version
+
+Update your project's version of `@lunariajs/core` to the latest version using your package manager:
+
+<Tabs syncKey="pkg">
+<TabItem label="npm">
+
+```sh
+npm install @lunariajs/core@latest
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```sh
+pnpm install @lunariajs/core@latest
+```
+
+</TabItem>
+<TabItem label="Yarn">
+
+```sh
+yarn add @lunariajs/core@latest
+```
+
+</TabItem>
+</Tabs>
+
+Then, follow the upgrade guide of every release between your current version and the latest one, in order.
+
+## Upgrade guides
+
+- [Upgrade to Lunaria v0.3](/upgrade-lunaria/v0-3/)
+- [Upgrade to Lunaria v0.2](/upgrade-lunaria/v0-2/)
+
+See [the Lunaria changelog](https://github.com/lunariajs/lunaria/blob/main/packages/core/CHANGELOG.md) for the full release notes of every version.
+
+## Versioning
+
+Lunaria follows [semantic versioning](https://semver.org/). While Lunaria is in v0.x:
+
+- Patch releases, e.g. from v0.3.0 to v0.3.1, include bug fixes and other changes that shouldn't require updates to your project.
+- Minor releases, e.g. from v0.2 to v0.3, can include breaking changes, described in the upgrade guide of each release.

@@ -1,0 +1,139 @@
+---
+title: Upgrade to Lunaria v0.3
+description: How to upgrade your project from Lunaria v0.2 to v0.3.
+---
+
+This guide will help you upgrade your project from Lunaria v0.2 to v0.3. To update the `@lunariajs/core` package, see [Upgrade Lunaria](/upgrade-lunaria/#upgrade-to-the-latest-version).
+
+:::note
+Lunaria v0.3 changes how the [`pattern`](/reference/patterns/) of your `files` entries is matched. Projects whose patterns only use the `@lang` and `@path` placeholders, with directory names written exactly like their locales' `lang`, don't need any changes.
+
+Upgrading from Lunaria v0.1? Follow the [v0.2 upgrade guide](/upgrade-lunaria/v0-2/) first.
+:::
+
+Lunaria v0.3 includes [breaking changes](#breaking-changes) to `pattern` matching. See [the Lunaria changelog](https://github.com/lunariajs/lunaria/blob/main/packages/core/CHANGELOG.md) for full release notes.
+
+## Breaking Changes
+
+### Changed: patterns are case-sensitive
+
+In Lunaria v0.2, patterns ignored the casing of paths. For example, with an `es` locale, `src/content/docs/@lang/@path` matched `src/content/docs/ES/intro.md` as a Spanish file.
+
+In Lunaria v0.3, every part of a pattern, including the `lang` of your locales, must match the casing of the path exactly.
+
+#### What should I do?
+
+If your directory or file names use a different casing than the `lang` of your locales, rename one of them to match the other.
+
+If you can't change either, set a [custom parameter](/guides/tracking/#custom-parameters) to each locale with the casing used in your paths, and use it in your pattern instead of `@lang`:
+
+```js title="lunaria.config.mjs" del={23} ins={7-9,15-17,24}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  sourceLocale: {
+    label: 'English',
+    lang: 'en',
+    parameters: {
+      dir: 'en',
+    },
+  },
+  locales: [
+    {
+      label: 'Português do Brasil',
+      lang: 'pt-br',
+      parameters: {
+        dir: 'pt-BR',
+      },
+    },
+  ],
+  files: [
+    {
+      include: ['src/content/docs/en/**/*.md'],
+      pattern: 'src/content/docs/@lang/@path',
+      pattern: 'src/content/docs/@dir/@path',
+      type: 'universal',
+    },
+  ],
+});
+```
+
+### Changed: patterns match file paths instead of URLs
+
+Lunaria v0.2 matched patterns as if paths were URLs. Parameters stopped at a `#` or `?`, as if they started a URL hash or query, and a trailing `/`, `#`, or `?` at the end of a path was ignored.
+
+In Lunaria v0.3, `#` and `?` in paths are matched like any other character, so parameters like `:name` match file names such as `c#.md`. A pattern also has to match the entire path, including any trailing characters.
+
+#### What should I do?
+
+No changes are needed in most projects. If your file names contain `#` or `?`, check that your dashboard still tracks them as expected.
+
+### Changed: invalid patterns are now errors
+
+In Lunaria v0.2, some invalid patterns were silently accepted, leaving the affected files unmatched or building wrong paths for them.
+
+In Lunaria v0.3, these patterns make Lunaria stop with an error explaining the problem, pointing to its position in the pattern when possible.
+
+#### What should I do?
+
+Run `lunaria build` and update any patterns it reports. The following were accepted in v0.2, but are errors in v0.3:
+
+| Problem                                                                      | Example                                                       | Fix                                                                                            |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| A group without a parameter                                                  | `doc{s}?/@lang/@path`                                         | Use a parameter instead, e.g. `:dir(docs?)/@lang/@path`                                        |
+| A named capturing group inside of a regular expression                       | `docs/@lang/:version((?<v>v1\|v2))/@path`                     | Use a non-capturing group, e.g. `:version((?:v1\|v2))`                                         |
+| A lookbehind inside of a regular expression                                  | `docs/@lang/:name((?<=a)b)/@path`                             | Rewrite the regular expression without the lookbehind                                          |
+| A trailing `\`                                                               | `docs/@lang/@path\\`                                          | Remove the `\`, or add the character it should escape                                          |
+| `source` and `locales` patterns with different parameters                    | `{ source: 'docs/:version/@path', locales: 'docs/@lang/@path' }` | Use the same parameters in both, e.g. `locales: 'docs/:version/@lang/@path'`                |
+| A pattern without a placeholder, using a parameter that only starts like one | `src/i18n/:pathname`                                          | Add a placeholder, e.g. `src/i18n/@lang/:pathname`                                             |
+
+`@lang` and custom parameters can still be used in only one of the `source` and `locales` patterns, since they take the values of each locale.
+
+See the [pattern syntax reference](/reference/patterns/) for everything a pattern accepts.
+
+### Changed: custom parameter names
+
+In Lunaria v0.2, the names of [custom parameters](/guides/tracking/#custom-parameters) could contain any character, even though names with characters like `-` couldn't be used in patterns.
+
+In Lunaria v0.3, custom parameter names can only contain letters, numbers, and underscores.
+
+#### What should I do?
+
+Rename any custom parameters with other characters in every locale, and update the patterns using them:
+
+```js title="lunaria.config.mjs" del={7,14,21} ins={8,15,22}
+import { defineConfig } from '@lunariajs/core/config';
+
+export default defineConfig({
+  sourceLocale: {
+    label: 'English',
+    lang: 'en',
+    parameters: { 'file-tag': 'en' },
+    parameters: { fileTag: 'en' },
+  },
+  locales: [
+    {
+      label: 'Português do Brasil',
+      lang: 'pt-br',
+      parameters: { 'file-tag': 'pt-BR' },
+      parameters: { fileTag: 'pt-BR' },
+    },
+  ],
+  files: [
+    {
+      include: ['src/i18n/en.yml'],
+      pattern: 'src/i18n/@file-tag.yml',
+      pattern: 'src/i18n/@fileTag.yml',
+      type: 'dictionary',
+    },
+  ],
+});
+```
+
+### Changed: pattern matching fixes
+
+Lunaria v0.3 also fixes several cases where a pattern matched the wrong files or built the wrong paths. For example, with both `pt` and `pt-BR` locales, the pattern `docs/@lang-@path` now matches `docs/pt-BR-intro.md` as a `pt-BR` file, instead of a `pt` file named `BR-intro.md`.
+
+#### What should I do?
+
+No changes are needed, but the status of some files may change after upgrading. See [the Lunaria changelog](https://github.com/lunariajs/lunaria/blob/main/packages/core/CHANGELOG.md) for the full list of fixes.
