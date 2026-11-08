@@ -13,6 +13,16 @@ Upgrading from Lunaria v0.1? Follow the [v0.2 upgrade guide](/upgrade-lunaria/v0
 
 Lunaria v0.3 includes [breaking changes](#breaking-changes) to `pattern` matching. See [the Lunaria changelog](https://github.com/lunariajs/lunaria/blob/main/packages/core/CHANGELOG.md) for full release notes.
 
+## Update the GitHub Action
+
+If you use the [Lunaria GitHub Action](/integrations/github-action/), update it to `v0.4`.
+
+```yml title=".github/workflows/lunaria.yml" del={2} ins={3}
+- name: Generate Lunaria Overview
+  uses: lunariajs/action@v0.3
+  uses: lunariajs/action@v0.4
+```
+
 ## Breaking Changes
 
 ### Changed: patterns are case-sensitive
